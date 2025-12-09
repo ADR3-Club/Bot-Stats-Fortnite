@@ -79,7 +79,8 @@ export async function execute(interaction) {
     // Construire l'embed
     const embed = new EmbedBuilder()
       .setTitle(`📊 Stats de ${player.displayName}`)
-      .setColor(0x9d5bd2);
+      .setColor(0x9d5bd2)
+      .setThumbnail(interaction.user.displayAvatarURL({ size: 128 }));
 
     if (mode && GAME_MODES[mode]) {
       // Stats d'un mode spécifique
