@@ -54,7 +54,12 @@ export async function execute(interaction) {
     }
 
     // Construire l'embed
-    const platformEmojis = { psn: '<:PSN:1448005088168771656>', xbl: '<:Xbox:1448004371714408579>', epic: '<:Epic:1448004394707849287>', nintendo: '<:Switch:1448004333298782208>' };
+    const platformIcons = {
+      psn: 'https://cdn.discordapp.com/emojis/1448005088168771656.png',
+      xbl: 'https://cdn.discordapp.com/emojis/1448004371714408579.png',
+      epic: 'https://cdn.discordapp.com/emojis/1448004394707849287.png',
+      nintendo: 'https://cdn.discordapp.com/emojis/1448004333298782208.png',
+    };
     const platformNames = { psn: 'PlayStation', xbl: 'Xbox', epic: 'PC / Epic', nintendo: 'Nintendo Switch' };
 
     const embed = new EmbedBuilder()
@@ -65,7 +70,8 @@ export async function execute(interaction) {
     // Afficher la plateforme en author si connue
     if (linked.platform) {
       embed.setAuthor({
-        name: `${platformEmojis[linked.platform]} ${platformNames[linked.platform]}`,
+        name: platformNames[linked.platform] || linked.platform,
+        iconURL: platformIcons[linked.platform],
       });
     }
 

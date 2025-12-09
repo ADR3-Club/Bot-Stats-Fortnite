@@ -60,7 +60,12 @@ export async function execute(interaction) {
       // Lier le compte
       linkAccount(interaction.user.id, player.id, player.displayName, platform);
 
-      const platformEmojis = { psn: '<:PSN:1448005088168771656>', xbl: '<:Xbox:1448004371714408579>', epic: '<:Epic:1448004394707849287>', nintendo: '<:Switch:1448004333298782208>' };
+      const platformIcons = {
+        psn: 'https://cdn.discordapp.com/emojis/1448005088168771656.png',
+        xbl: 'https://cdn.discordapp.com/emojis/1448004371714408579.png',
+        epic: 'https://cdn.discordapp.com/emojis/1448004394707849287.png',
+        nintendo: 'https://cdn.discordapp.com/emojis/1448004333298782208.png',
+      };
       const platformNames = { psn: 'PlayStation', xbl: 'Xbox', epic: 'PC / Epic', nintendo: 'Nintendo Switch' };
       const embed = new EmbedBuilder()
         .setTitle('✅ Compte lié')
@@ -72,12 +77,11 @@ export async function execute(interaction) {
         )
         .setFooter({ text: 'Utilise /me pour voir tes stats' });
 
-      // Afficher la plateforme si connue
+      // Afficher la plateforme en author si connue
       if (platform) {
-        embed.spliceFields(0, 0, {
-          name: 'Plateforme',
-          value: `${platformEmojis[platform] || '🎮'} ${platformNames[platform] || platform}`,
-          inline: true,
+        embed.setAuthor({
+          name: platformNames[platform] || platform,
+          iconURL: platformIcons[platform],
         });
       }
 
@@ -118,7 +122,12 @@ export async function execute(interaction) {
       });
     }
 
-    const platformEmojis = { psn: '<:PSN:1448005088168771656>', xbl: '<:Xbox:1448004371714408579>', epic: '<:Epic:1448004394707849287>', nintendo: '<:Switch:1448004333298782208>' };
+    const platformIcons = {
+      psn: 'https://cdn.discordapp.com/emojis/1448005088168771656.png',
+      xbl: 'https://cdn.discordapp.com/emojis/1448004371714408579.png',
+      epic: 'https://cdn.discordapp.com/emojis/1448004394707849287.png',
+      nintendo: 'https://cdn.discordapp.com/emojis/1448004333298782208.png',
+    };
     const platformNames = { psn: 'PlayStation', xbl: 'Xbox', epic: 'PC / Epic', nintendo: 'Nintendo Switch' };
     const embed = new EmbedBuilder()
       .setTitle('🔗 Compte lié')
@@ -128,12 +137,11 @@ export async function execute(interaction) {
         { name: 'Lié le', value: new Date(linked.linked_at).toLocaleDateString('fr-FR'), inline: true },
       );
 
-    // Afficher la plateforme si connue
+    // Afficher la plateforme en author si connue
     if (linked.platform) {
-      embed.spliceFields(1, 0, {
-        name: 'Plateforme',
-        value: `${platformEmojis[linked.platform] || '🎮'} ${platformNames[linked.platform] || linked.platform}`,
-        inline: true,
+      embed.setAuthor({
+        name: platformNames[linked.platform] || linked.platform,
+        iconURL: platformIcons[linked.platform],
       });
     }
 
