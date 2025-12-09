@@ -62,9 +62,9 @@ const CARD_HEIGHT = 450;
 
 // Couleurs des barres de stats (style fortnite.gg)
 const STAT_BARS = [
-  { bg: 'rgba(147, 81, 182, 0.95)', stats: ['wins', 'winRate', 'matches'] },      // Violet
-  { bg: 'rgba(45, 135, 145, 0.95)', stats: ['kd', 'killsPerMatch', 'kills'] },    // Teal/Cyan
-  { bg: 'rgba(85, 55, 120, 0.95)', stats: ['playtime', 'avgMatchTime'] },         // Violet foncé
+  { bg: 'rgba(147, 81, 182, 0.95)', icon: 'crown', iconColor: '#e855a0', stats: ['wins', 'winRate', 'matches'] },      // Violet + icône rose
+  { bg: 'rgba(45, 135, 145, 0.95)', icon: 'crosshair', iconColor: '#55d4e8', stats: ['kd', 'killsPerMatch', 'kills'] }, // Teal + icône cyan
+  { bg: 'rgba(85, 55, 120, 0.95)', icon: 'timer', iconColor: '#c87090', stats: ['playtime', 'avgMatchTime'] },          // Violet foncé + icône rose foncé
 ];
 
 /**
@@ -191,8 +191,9 @@ export async function renderStatsCard({ playerName, modeName, stats, period = 'L
   const barStartY = 180;
   const barHeight = 80;
   const barGap = 8;
-  const barWidth = 520;
+  const barWidth = 540;
   const barX = 20;
+  const iconAreaWidth = 70; // Espace pour l'icône à gauche
 
   // Préparer les données de stats
   const statsData = prepareStatsData(stats);
@@ -208,16 +209,26 @@ export async function renderStatsCard({ playerName, modeName, stats, period = 'L
     ctx.fill();
     ctx.restore();
 
-    // Stats dans la barre
+    // Grande icône à gauche (style fortnite.gg)
+    if (bar.icon) {
+      const iconSize = 45;
+      const iconX = barX + iconAreaWidth / 2;
+      const iconY = y + barHeight / 2;
+      drawIconColored(ctx, bar.icon, iconX, iconY, iconSize, bar.iconColor);
+    }
+
+    // Stats dans la barre (décalées à droite pour laisser place à l'icône)
+    const statsAreaX = barX + iconAreaWidth;
+    const statsAreaWidth = barWidth - iconAreaWidth;
     const statCount = bar.stats.length;
-    const cellWidth = barWidth / statCount;
+    const cellWidth = statsAreaWidth / statCount;
 
     for (let j = 0; j < statCount; j++) {
       const statKey = bar.stats[j];
       const statInfo = statsData[statKey];
       if (!statInfo) continue;
 
-      const cellX = barX + cellWidth * j + cellWidth / 2;
+      const cellX = statsAreaX + cellWidth * j + cellWidth / 2;
       const cellY = y + barHeight / 2;
 
       // Valeur (grande, blanche, bold)
@@ -230,27 +241,12 @@ export async function renderStatsCard({ playerName, modeName, stats, period = 'L
       ctx.fillText(statInfo.value, cellX, cellY);
       ctx.restore();
 
-      // Label avec icône vectorielle (petit, sous la valeur)
+      // Label (petit, sous la valeur) - sans icône, juste le texte
       ctx.save();
       ctx.font = 'bold 14px Burbank, Arial, sans-serif';
       ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
       ctx.textAlign = 'center';
-
-      // Mesurer le label pour positionner l'icône
-      const labelWidth = ctx.measureText(statInfo.label).width;
-      const iconSize = 12;
-      const gap = 4;
-      const totalWidth = iconSize + gap + labelWidth;
-      const startX = cellX - totalWidth / 2;
-
-      // Dessiner l'icône
-      if (statInfo.iconType) {
-        drawIcon(ctx, statInfo.iconType, startX + iconSize / 2, cellY + 24, iconSize);
-      }
-
-      // Dessiner le label
-      ctx.textAlign = 'left';
-      ctx.fillText(statInfo.label, startX + iconSize + gap, cellY + 28);
+      ctx.fillText(statInfo.label, cellX, cellY + 28);
       ctx.restore();
     }
   }
@@ -291,6 +287,104 @@ function prepareStatsData(stats) {
     playtime: { value: formatPlaytimeShort(minutesPlayed), label: 'PLAY TIME', iconType: 'clock' },
     avgMatchTime: { value: `${avgMatchTime}M`, label: 'AVG. MATCH', iconType: 'timer' },
   };
+}
+
+/**
+ * Dessine une grande icône colorée (pour la barre de stats)
+ * Utilise l'icône SVG si disponible, sinon fallback vectoriel
+ */
+function drawIconColored(ctx, type, x, y, size, color) {
+  const icon = iconCache[type];
+
+  if (icon) {
+    // Créer un canvas temporaire pour coloriser l'icône
+    const tempCanvas = createCanvas(size, size);
+    const tempCtx = tempCanvas.getContext('2d');
+
+    // Dessiner l'icône SVG (blanche)
+    tempCtx.drawImage(icon, 0, 0, size, size);
+
+    // Appliquer la couleur via globalCompositeOperation
+    tempCtx.globalCompositeOperation = 'source-atop';
+    tempCtx.fillStyle = color;
+    tempCtx.fillRect(0, 0, size, size);
+
+    // Dessiner sur le canvas principal
+    ctx.drawImage(tempCanvas, x - size / 2, y - size / 2);
+    return;
+  }
+
+  // Fallback vectoriel avec couleur
+  drawIconVector(ctx, type, x, y, size, color);
+}
+
+/**
+ * Dessine une icône vectorielle avec une couleur spécifique
+ */
+function drawIconVector(ctx, type, x, y, size, color = 'rgba(255, 255, 255, 0.9)') {
+  ctx.save();
+  ctx.fillStyle = color;
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2.5;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+
+  const s = size / 2;
+
+  switch (type) {
+    case 'crown':
+      ctx.beginPath();
+      ctx.moveTo(x - s, y + s * 0.5);
+      ctx.lineTo(x - s, y - s * 0.3);
+      ctx.lineTo(x - s * 0.5, y + s * 0.1);
+      ctx.lineTo(x, y - s * 0.6);
+      ctx.lineTo(x + s * 0.5, y + s * 0.1);
+      ctx.lineTo(x + s, y - s * 0.3);
+      ctx.lineTo(x + s, y + s * 0.5);
+      ctx.closePath();
+      ctx.fill();
+      // Base de la couronne
+      ctx.fillRect(x - s, y + s * 0.5, s * 2, s * 0.2);
+      break;
+
+    case 'crosshair':
+      ctx.beginPath();
+      ctx.arc(x, y, s * 0.4, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(x, y - s * 0.9);
+      ctx.lineTo(x, y - s * 0.55);
+      ctx.moveTo(x, y + s * 0.55);
+      ctx.lineTo(x, y + s * 0.9);
+      ctx.moveTo(x - s * 0.9, y);
+      ctx.lineTo(x - s * 0.55, y);
+      ctx.moveTo(x + s * 0.55, y);
+      ctx.lineTo(x + s * 0.9, y);
+      ctx.stroke();
+      break;
+
+    case 'timer':
+      ctx.beginPath();
+      ctx.arc(x, y + s * 0.1, s * 0.7, 0, Math.PI * 2);
+      ctx.stroke();
+      // Bouton du haut
+      ctx.fillRect(x - s * 0.15, y - s * 0.8, s * 0.3, s * 0.25);
+      // Aiguille
+      ctx.beginPath();
+      ctx.moveTo(x, y + s * 0.1);
+      ctx.lineTo(x + s * 0.35, y - s * 0.25);
+      ctx.stroke();
+      break;
+
+    default:
+      // Cercle par défaut
+      ctx.beginPath();
+      ctx.arc(x, y, s * 0.6, 0, Math.PI * 2);
+      ctx.stroke();
+      break;
+  }
+
+  ctx.restore();
 }
 
 /**
