@@ -2,11 +2,7 @@
 import { getEpicClient, isEpicReady } from './epicAuth.js';
 
 // Plateformes externes supportées
-const EXTERNAL_PLATFORMS = {
-  psn: 'psn',       // PlayStation Network
-  xbl: 'xbl',       // Xbox Live
-  nintendo: 'nintendo', // Nintendo Switch
-};
+const EXTERNAL_PLATFORMS = ['psn', 'xbl'];  // fortnite-api.com supporte psn et xbl
 
 // Mapping des modes de jeu - patterns pour matcher les playlists Epic
 export const GAME_MODES = {
@@ -44,7 +40,7 @@ const STAT_KEYS = [
 
 /**
  * Recherche un joueur par son pseudo Epic ou plateforme externe
- * Essaie dans l'ordre: Epic > PSN > Xbox > Nintendo
+ * Essaie dans l'ordre: Epic > PSN > Xbox (via fortnite-api.com)
  * @param {string} displayName - Pseudo Epic Games ou console
  * @returns {Promise<Object|null>} - Compte trouvé ou null
  */
@@ -72,21 +68,23 @@ export async function findPlayer(displayName) {
     }
   }
 
-  // 2. Essayer les plateformes externes (PSN, Xbox, Nintendo)
-  for (const platform of Object.keys(EXTERNAL_PLATFORMS)) {
+  // 2. Essayer les plateformes externes via fortnite-api.com (gratuit)
+  for (const platform of EXTERNAL_PLATFORMS) {
     try {
-      const response = await client.http.epicgamesRequest({
-        method: 'GET',
-        url: `https://account-public-service-prod.ol.epicgames.com/account/api/public/account/lookup/externalAuth/${platform}/displayName/${encodeURIComponent(displayName)}`,
-      }, 'fortnite');
+      const response = await fetch(
+        `https://fortnite-api.com/v2/stats/br/v2?name=${encodeURIComponent(displayName)}&accountType=${platform}`
+      );
 
-      if (response && response.id) {
-        return {
-          id: response.id,
-          displayName: response.displayName || displayName,
-          platform: platform,
-          externalDisplayName: displayName,
-        };
+      if (response.ok) {
+        const data = await response.json();
+        if (data.status === 200 && data.data?.account) {
+          return {
+            id: data.data.account.id,
+            displayName: data.data.account.name,
+            platform: platform,
+            externalDisplayName: displayName,
+          };
+        }
       }
     } catch {
       // Continuer avec la plateforme suivante
@@ -125,44 +123,34 @@ export async function findPlayerById(accountId) {
 }
 
 /**
- * Recherche un joueur par son pseudo sur une plateforme externe (PSN, Xbox, Nintendo)
+ * Recherche un joueur par son pseudo sur une plateforme externe (PSN, Xbox)
  * @param {string} displayName - Pseudo sur la plateforme
- * @param {string} platform - Plateforme (psn, xbl, nintendo)
+ * @param {string} platform - Plateforme (psn, xbl)
  * @returns {Promise<Object|null>}
  */
 export async function findPlayerByExternalPlatform(displayName, platform) {
-  if (!isEpicReady()) {
-    throw new Error('Client Epic non connecté');
-  }
-
-  if (!EXTERNAL_PLATFORMS[platform]) {
+  if (!EXTERNAL_PLATFORMS.includes(platform)) {
     return null;
   }
-
-  const client = getEpicClient();
 
   try {
-    // Appel direct à l'API Epic Games pour lookup externe
-    const response = await client.http.epicgamesRequest({
-      method: 'GET',
-      url: `https://account-public-service-prod.ol.epicgames.com/account/api/public/account/lookup/externalAuth/${platform}/displayName/${encodeURIComponent(displayName)}`,
-    }, 'fortnite');
+    const response = await fetch(
+      `https://fortnite-api.com/v2/stats/br/v2?name=${encodeURIComponent(displayName)}&accountType=${platform}`
+    );
 
-    if (response && response.id) {
-      return {
-        id: response.id,
-        displayName: response.displayName || displayName,
-        platform: platform,
-        externalDisplayName: displayName,
-      };
+    if (response.ok) {
+      const data = await response.json();
+      if (data.status === 200 && data.data?.account) {
+        return {
+          id: data.data.account.id,
+          displayName: data.data.account.name,
+          platform: platform,
+          externalDisplayName: displayName,
+        };
+      }
     }
     return null;
-  } catch (e) {
-    // 404 = compte non trouvé
-    if (e.code === 404 || e.message?.includes('not found')) {
-      return null;
-    }
-    // Ignorer les erreurs silencieusement pour les recherches
+  } catch {
     return null;
   }
 }
