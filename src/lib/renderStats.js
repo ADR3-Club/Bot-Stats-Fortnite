@@ -2,6 +2,7 @@
 import { createCanvas, registerFont, loadImage } from 'canvas';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { readFileSync, existsSync } from 'node:fs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -13,6 +14,46 @@ try {
   });
 } catch (e) {
   console.log('[WARN] Font Burbank non trouvée, utilisation de la font système');
+}
+
+// Cache pour les icônes SVG chargées
+const iconCache = {};
+const ICONS_DIR = join(__dirname, '../assets/icons');
+
+/**
+ * Charge une icône SVG et la met en cache
+ */
+async function loadIcon(name) {
+  if (iconCache[name]) return iconCache[name];
+
+  const svgPath = join(ICONS_DIR, `${name}.svg`);
+  if (!existsSync(svgPath)) {
+    console.log(`[WARN] Icône ${name}.svg non trouvée`);
+    return null;
+  }
+
+  try {
+    // Lire le SVG et le convertir en data URL pour loadImage
+    const svgContent = readFileSync(svgPath, 'utf-8');
+    const dataUrl = `data:image/svg+xml;base64,${Buffer.from(svgContent).toString('base64')}`;
+    const img = await loadImage(dataUrl);
+    iconCache[name] = img;
+    return img;
+  } catch (e) {
+    console.log(`[WARN] Erreur chargement icône ${name}: ${e.message}`);
+    return null;
+  }
+}
+
+/**
+ * Précharge toutes les icônes au démarrage
+ */
+export async function preloadIcons() {
+  const iconNames = ['crown', 'percent', 'play', 'swords', 'crosshair', 'skull', 'clock', 'timer'];
+  for (const name of iconNames) {
+    await loadIcon(name);
+  }
+  console.log(`[INFO] ${Object.keys(iconCache).length} icônes chargées`);
 }
 
 // Dimensions de la carte
@@ -253,7 +294,7 @@ function prepareStatsData(stats) {
 }
 
 /**
- * Dessine une icône vectorielle
+ * Dessine une icône (SVG si disponible, sinon fallback vectoriel)
  * @param {CanvasRenderingContext2D} ctx
  * @param {string} type - Type d'icône
  * @param {number} x - Position X (centre)
@@ -261,6 +302,16 @@ function prepareStatsData(stats) {
  * @param {number} size - Taille de l'icône
  */
 function drawIcon(ctx, type, x, y, size) {
+  // Essayer d'utiliser l'icône SVG en cache
+  const icon = iconCache[type];
+  if (icon) {
+    ctx.save();
+    ctx.drawImage(icon, x - size / 2, y - size / 2, size, size);
+    ctx.restore();
+    return;
+  }
+
+  // Fallback: dessiner l'icône vectoriellement
   ctx.save();
   ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
   ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
@@ -268,10 +319,10 @@ function drawIcon(ctx, type, x, y, size) {
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
 
-  const s = size / 2; // demi-taille
+  const s = size / 2;
 
   switch (type) {
-    case 'crown': // Couronne pour les wins
+    case 'crown':
       ctx.beginPath();
       ctx.moveTo(x - s, y + s * 0.6);
       ctx.lineTo(x - s, y - s * 0.2);
@@ -284,14 +335,14 @@ function drawIcon(ctx, type, x, y, size) {
       ctx.fill();
       break;
 
-    case 'percent': // Pourcentage
+    case 'percent':
       ctx.font = `bold ${size}px Arial`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText('%', x, y);
       break;
 
-    case 'play': // Triangle play pour matches
+    case 'play':
       ctx.beginPath();
       ctx.moveTo(x - s * 0.4, y - s * 0.7);
       ctx.lineTo(x + s * 0.7, y);
@@ -300,31 +351,25 @@ function drawIcon(ctx, type, x, y, size) {
       ctx.fill();
       break;
 
-    case 'swords': // Épées croisées pour K/D
+    case 'swords':
       ctx.beginPath();
-      // Épée 1 (diagonal /)
       ctx.moveTo(x - s * 0.7, y + s * 0.7);
       ctx.lineTo(x + s * 0.7, y - s * 0.7);
-      // Garde
       ctx.moveTo(x - s * 0.3, y - s * 0.1);
       ctx.lineTo(x + s * 0.1, y + s * 0.3);
       ctx.stroke();
-      // Épée 2 (diagonal \)
       ctx.beginPath();
       ctx.moveTo(x + s * 0.7, y + s * 0.7);
       ctx.lineTo(x - s * 0.7, y - s * 0.7);
-      // Garde
       ctx.moveTo(x + s * 0.3, y - s * 0.1);
       ctx.lineTo(x - s * 0.1, y + s * 0.3);
       ctx.stroke();
       break;
 
-    case 'crosshair': // Viseur pour kills/match
+    case 'crosshair':
       ctx.beginPath();
-      // Cercle central
       ctx.arc(x, y, s * 0.3, 0, Math.PI * 2);
       ctx.stroke();
-      // Lignes du viseur
       ctx.beginPath();
       ctx.moveTo(x, y - s * 0.8);
       ctx.lineTo(x, y - s * 0.5);
@@ -337,8 +382,7 @@ function drawIcon(ctx, type, x, y, size) {
       ctx.stroke();
       break;
 
-    case 'skull': // Crâne pour kills
-      // Tête
+    case 'skull':
       ctx.beginPath();
       ctx.arc(x, y - s * 0.1, s * 0.6, Math.PI, 0);
       ctx.lineTo(x + s * 0.6, y + s * 0.2);
@@ -346,7 +390,6 @@ function drawIcon(ctx, type, x, y, size) {
       ctx.quadraticCurveTo(x - s * 0.3, y + s * 0.6, x - s * 0.6, y + s * 0.2);
       ctx.closePath();
       ctx.fill();
-      // Yeux (trous)
       ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
       ctx.beginPath();
       ctx.arc(x - s * 0.25, y - s * 0.1, s * 0.15, 0, Math.PI * 2);
@@ -354,11 +397,10 @@ function drawIcon(ctx, type, x, y, size) {
       ctx.fill();
       break;
 
-    case 'clock': // Horloge pour playtime
+    case 'clock':
       ctx.beginPath();
       ctx.arc(x, y, s * 0.7, 0, Math.PI * 2);
       ctx.stroke();
-      // Aiguilles
       ctx.beginPath();
       ctx.moveTo(x, y);
       ctx.lineTo(x, y - s * 0.4);
@@ -367,11 +409,10 @@ function drawIcon(ctx, type, x, y, size) {
       ctx.stroke();
       break;
 
-    case 'timer': // Timer/chrono pour avg match
+    case 'timer':
       ctx.beginPath();
       ctx.arc(x, y + s * 0.1, s * 0.6, 0, Math.PI * 2);
       ctx.stroke();
-      // Bouton du haut
       ctx.beginPath();
       ctx.moveTo(x - s * 0.15, y - s * 0.5);
       ctx.lineTo(x + s * 0.15, y - s * 0.5);
@@ -379,7 +420,6 @@ function drawIcon(ctx, type, x, y, size) {
       ctx.lineTo(x - s * 0.15, y - s * 0.7);
       ctx.closePath();
       ctx.fill();
-      // Aiguille
       ctx.beginPath();
       ctx.moveTo(x, y + s * 0.1);
       ctx.lineTo(x + s * 0.25, y - s * 0.2);

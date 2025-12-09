@@ -7,6 +7,7 @@ import { DateTime } from 'luxon';
 import { initDb, runMaintenance } from './src/database/db.js';
 import { initEpicClient, getEpicClient } from './src/services/epicAuth.js';
 import { updateCurrentSeason } from './src/services/epicStats.js';
+import { preloadIcons } from './src/lib/renderStats.js';
 
 // ========= LOGGING =========
 export function log(message, level = 'INFO') {
@@ -76,6 +77,9 @@ client.once('clientReady', async (c) => {
 
   // Maintenance au démarrage
   runMaintenance();
+
+  // Précharger les icônes pour les cartes stats
+  await preloadIcons();
 
   // Init Epic Client
   try {
