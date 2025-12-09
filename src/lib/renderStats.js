@@ -7,13 +7,19 @@ import { readFileSync, existsSync } from 'node:fs';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 // Enregistrer la font Fortnite
-try {
-  registerFont(join(__dirname, '../assets/fonts/BurbankBigCondensed-Bold.otf'), {
-    family: 'Burbank',
-    weight: 'bold',
-  });
-} catch (e) {
-  console.log('[WARN] Font Burbank non trouvée, utilisation de la font système');
+const fontPath = join(__dirname, '../assets/fonts/BurbankBigCondensed-Bold.otf');
+if (existsSync(fontPath)) {
+  try {
+    registerFont(fontPath, {
+      family: 'Burbank',
+      weight: 'bold',
+    });
+    console.log('[INFO] Font Burbank enregistrée');
+  } catch (e) {
+    console.log(`[ERROR] Erreur enregistrement font Burbank: ${e.message}`);
+  }
+} else {
+  console.log(`[ERROR] Font Burbank non trouvée: ${fontPath}`);
 }
 
 // Cache pour les icônes SVG chargées
@@ -292,25 +298,38 @@ function prepareStatsData(stats) {
 /**
  * Dessine une grande icône colorée (pour la barre de stats)
  * Utilise l'icône SVG si disponible, sinon fallback vectoriel
+ * Rendu à haute résolution (3x) pour éviter le flou
  */
 function drawIconColored(ctx, type, x, y, size, color) {
   const icon = iconCache[type];
 
   if (icon) {
-    // Créer un canvas temporaire pour coloriser l'icône
-    const tempCanvas = createCanvas(size, size);
+    // Facteur de supersampling pour un rendu net
+    const scale = 3;
+    const hiResSize = size * scale;
+
+    // Créer un canvas temporaire haute résolution pour coloriser l'icône
+    const tempCanvas = createCanvas(hiResSize, hiResSize);
     const tempCtx = tempCanvas.getContext('2d');
 
-    // Dessiner l'icône SVG (blanche)
-    tempCtx.drawImage(icon, 0, 0, size, size);
+    // Activer l'antialiasing
+    tempCtx.imageSmoothingEnabled = true;
+    tempCtx.imageSmoothingQuality = 'high';
+
+    // Dessiner l'icône SVG (blanche) à haute résolution
+    tempCtx.drawImage(icon, 0, 0, hiResSize, hiResSize);
 
     // Appliquer la couleur via globalCompositeOperation
     tempCtx.globalCompositeOperation = 'source-atop';
     tempCtx.fillStyle = color;
-    tempCtx.fillRect(0, 0, size, size);
+    tempCtx.fillRect(0, 0, hiResSize, hiResSize);
 
-    // Dessiner sur le canvas principal
-    ctx.drawImage(tempCanvas, x - size / 2, y - size / 2);
+    // Dessiner sur le canvas principal avec réduction (antialiasing activé)
+    ctx.save();
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(tempCanvas, x - size / 2, y - size / 2, size, size);
+    ctx.restore();
     return;
   }
 
