@@ -14,6 +14,16 @@ export const data = new SlashCommandBuilder()
       .setDescription('Ton pseudo Epic Games')
       .setRequired(true)
     )
+    .addStringOption(o => o
+      .setName('plateforme')
+      .setDescription('Ta plateforme (optionnel)')
+      .setRequired(false)
+      .addChoices(
+        { name: 'PlayStation', value: 'psn' },
+        { name: 'Xbox', value: 'xbl' },
+        { name: 'PC / Epic', value: 'epic' },
+      )
+    )
   )
   .addSubcommand(sub => sub
     .setName('remove')
@@ -29,6 +39,7 @@ export async function execute(interaction) {
 
   if (subcommand === 'set') {
     const pseudo = interaction.options.getString('pseudo', true);
+    const manualPlatform = interaction.options.getString('plateforme');
 
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
@@ -42,8 +53,11 @@ export async function execute(interaction) {
         });
       }
 
-      // Lier le compte (avec plateforme si trouvé via PSN/Xbox)
-      linkAccount(interaction.user.id, player.id, player.displayName, player.platform || null);
+      // Plateforme: priorité au manuel, sinon auto-détection (sauf 'epic' qui = null)
+      const platform = manualPlatform === 'epic' ? null : (manualPlatform || player.platform || null);
+
+      // Lier le compte
+      linkAccount(interaction.user.id, player.id, player.displayName, platform);
 
       const platformNames = { psn: 'PlayStation', xbl: 'Xbox' };
       const embed = new EmbedBuilder()
@@ -56,11 +70,11 @@ export async function execute(interaction) {
         )
         .setFooter({ text: 'Utilise /me pour voir tes stats' });
 
-      // Afficher la plateforme si détectée
-      if (player.platform) {
+      // Afficher la plateforme si connue
+      if (platform) {
         embed.spliceFields(0, 0, {
           name: 'Plateforme',
-          value: `🎮 ${platformNames[player.platform] || player.platform}`,
+          value: `🎮 ${platformNames[platform] || platform}`,
           inline: true,
         });
       }
