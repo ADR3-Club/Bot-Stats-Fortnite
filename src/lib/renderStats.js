@@ -68,18 +68,21 @@ export async function renderStatsCard({ playerName, modeName, stats, period = 'L
   ctx.fill();
 
   // === AVATAR DISCORD (cercle en haut à droite) ===
+  const avatarSize = 140;
+  const avatarX = CARD_WIDTH - avatarSize - 25;
+  const avatarY = 20;
+
   if (avatarUrl) {
     try {
-      const avatar = await loadImage(avatarUrl);
-      const avatarSize = 180;
-      const avatarX = CARD_WIDTH - avatarSize - 30;
-      const avatarY = 25;
+      // Forcer le format PNG et une taille raisonnable
+      const cleanUrl = avatarUrl.split('?')[0] + '?size=256';
+      const avatar = await loadImage(cleanUrl);
 
-      // Cercle de fond (bordure)
+      // Cercle de fond (bordure blanche)
       ctx.save();
       ctx.beginPath();
-      ctx.arc(avatarX + avatarSize / 2, avatarY + avatarSize / 2, avatarSize / 2 + 4, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+      ctx.arc(avatarX + avatarSize / 2, avatarY + avatarSize / 2, avatarSize / 2 + 5, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
       ctx.fill();
       ctx.restore();
 
@@ -92,7 +95,14 @@ export async function renderStatsCard({ playerName, modeName, stats, period = 'L
       ctx.drawImage(avatar, avatarX, avatarY, avatarSize, avatarSize);
       ctx.restore();
     } catch (e) {
-      // Ignorer si l'avatar ne charge pas
+      console.log(`[WARN] Avatar non chargé: ${e.message}`);
+      // Dessiner un cercle placeholder
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(avatarX + avatarSize / 2, avatarY + avatarSize / 2, avatarSize / 2, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+      ctx.fill();
+      ctx.restore();
     }
   }
 
