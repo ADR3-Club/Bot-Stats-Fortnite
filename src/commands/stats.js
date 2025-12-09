@@ -1,37 +1,55 @@
 // src/commands/stats.js
 import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
-import { findPlayer, getPlayerStats, getAvailableModes, GAME_MODES } from '../services/epicStats.js';
-import { getCachedStats, cacheStats } from '../database/db.js';
+import { findPlayer, findPlayerById, getPlayerStats, getAvailableModes, GAME_MODES } from '../services/epicStats.js';
+import { getCachedStats, cacheStats, getLinkedAccount } from '../database/db.js';
 
 export const data = new SlashCommandBuilder()
   .setName('stats')
   .setDescription('Affiche les stats Fortnite d\'un joueur')
   .addStringOption(o => o
-    .setName('pseudo')
-    .setDescription('Pseudo Epic Games du joueur')
-    .setRequired(true)
-  )
-  .addStringOption(o => o
     .setName('mode')
     .setDescription('Mode de jeu spécifique')
     .setRequired(false)
     .addChoices(...getAvailableModes())
+  )
+  .addStringOption(o => o
+    .setName('pseudo')
+    .setDescription('Pseudo Epic Games (optionnel si compte lié)')
+    .setRequired(false)
   );
 
 export async function execute(interaction) {
-  const pseudo = interaction.options.getString('pseudo', true);
+  const pseudo = interaction.options.getString('pseudo');
   const mode = interaction.options.getString('mode');
 
   await interaction.deferReply();
 
   try {
-    // Rechercher le joueur
-    const player = await findPlayer(pseudo);
+    let player;
 
-    if (!player) {
-      return interaction.editReply({
-        content: `❌ Joueur **${pseudo}** non trouvé.`,
-      });
+    if (pseudo) {
+      // Rechercher le joueur par pseudo
+      player = await findPlayer(pseudo);
+
+      if (!player) {
+        return interaction.editReply({
+          content: `❌ Joueur **${pseudo}** non trouvé.`,
+        });
+      }
+    } else {
+      // Utiliser le compte lié
+      const linked = getLinkedAccount(interaction.user.id);
+
+      if (!linked) {
+        return interaction.editReply({
+          content: '❌ Pseudo non spécifié et aucun compte lié.\nUtilise `/link set <pseudo>` ou `/stats pseudo:<pseudo>`.',
+        });
+      }
+
+      player = {
+        id: linked.epic_account_id,
+        displayName: linked.epic_display_name,
+      };
     }
 
     // Vérifier le cache
