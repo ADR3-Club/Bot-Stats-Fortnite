@@ -127,9 +127,10 @@ export async function execute(interaction) {
         { name: '⏱️ Temps joué', value: formatPlaytime(stats.overall.minutesPlayed), inline: true },
       );
 
-      // Top 3 modes avec le plus de parties
+      // Top 3 modes avec le plus de parties (exclure les modes non-compétitifs)
+      const excludedModes = ['playgroundv2', 'playground', 'creative'];
       const topModes = Object.entries(stats.modes)
-        .filter(([, m]) => m.matches > 0)
+        .filter(([name, m]) => m.matches > 0 && !excludedModes.some(ex => name.toLowerCase().includes(ex)))
         .sort((a, b) => b[1].matches - a[1].matches)
         .slice(0, 3);
 
