@@ -4,6 +4,19 @@ import { getEpicClient, isEpicReady } from './epicAuth.js';
 // Plateformes externes supportées
 const EXTERNAL_PLATFORMS = ['psn', 'xbl'];  // fortnite-api.com supporte psn et xbl
 
+// Configuration des saisons Fortnite (timestamps en secondes UTC)
+// Mise à jour nécessaire à chaque nouvelle saison
+export const SEASONS = {
+  c6s1: {
+    name: 'Chapitre 6 Saison 1',
+    shortName: 'C6S1',
+    startDate: new Date('2024-12-01T07:00:00Z'),  // 1er décembre 2024 à 8h CET
+    get startTime() { return Math.floor(this.startDate.getTime() / 1000); },
+  },
+  // Saison actuelle (alias)
+  get current() { return this.c6s1; },
+};
+
 // Headers pour fortnite-api.com (avec clé API si disponible)
 function getFortniteApiHeaders() {
   const headers = {};
@@ -121,9 +134,12 @@ export async function findPlayer(displayName) {
 /**
  * Récupère les stats d'un joueur
  * @param {string} accountId - ID du compte Epic
+ * @param {Object} options - Options de filtrage
+ * @param {number} options.startTime - Timestamp en secondes (début de période)
+ * @param {number} options.endTime - Timestamp en secondes (fin de période)
  * @returns {Promise<Object>} - Stats formatées
  */
-export async function getPlayerStats(accountId) {
+export async function getPlayerStats(accountId, options = {}) {
   if (!isEpicReady()) {
     throw new Error('Client Epic non connecté');
   }
@@ -131,8 +147,8 @@ export async function getPlayerStats(accountId) {
   const client = getEpicClient();
 
   try {
-    // Récupérer les stats brutes
-    const stats = await client.getBRStats(accountId);
+    // Récupérer les stats brutes (avec filtrage temporel si spécifié)
+    const stats = await client.getBRStats(accountId, options.startTime, options.endTime);
 
     if (!stats) {
       return null;

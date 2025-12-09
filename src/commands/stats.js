@@ -1,6 +1,6 @@
 // src/commands/stats.js
 import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
-import { findPlayer, getPlayerStats, getAvailableModes, GAME_MODES, formatPlaytime } from '../services/epicStats.js';
+import { findPlayer, getPlayerStats, getAvailableModes, GAME_MODES, SEASONS, formatPlaytime } from '../services/epicStats.js';
 import { getCachedStats, cacheStats, getLinkedAccount } from '../database/db.js';
 
 export const data = new SlashCommandBuilder()
@@ -16,11 +16,17 @@ export const data = new SlashCommandBuilder()
     .setName('pseudo')
     .setDescription('Pseudo Epic Games (optionnel si compte lié)')
     .setRequired(false)
+  )
+  .addBooleanOption(o => o
+    .setName('saison')
+    .setDescription('Stats de la saison actuelle uniquement')
+    .setRequired(false)
   );
 
 export async function execute(interaction) {
   const pseudo = interaction.options.getString('pseudo');
   const mode = interaction.options.getString('mode');
+  const seasonOnly = interaction.options.getBoolean('saison') || false;
 
   await interaction.deferReply();
 
@@ -53,14 +59,18 @@ export async function execute(interaction) {
       };
     }
 
-    // Vérifier le cache
-    let stats = getCachedStats(player.id);
+    // Options pour le filtrage par saison
+    const statsOptions = seasonOnly ? { startTime: SEASONS.current.startTime } : {};
+    const cacheKey = seasonOnly ? `${player.id}_season` : player.id;
+
+    // Vérifier le cache (seulement pour stats lifetime)
+    let stats = seasonOnly ? null : getCachedStats(player.id);
 
     if (!stats) {
       // Récupérer les stats depuis l'API
-      stats = await getPlayerStats(player.id);
+      stats = await getPlayerStats(player.id, statsOptions);
 
-      if (stats && !stats.private) {
+      if (stats && !stats.private && !seasonOnly) {
         cacheStats(player.id, stats);
       }
     }
@@ -99,17 +109,21 @@ export async function execute(interaction) {
       });
     }
 
+    // Texte pour la période
+    const periodText = seasonOnly ? `📅 ${SEASONS.current.shortName}` : '🌐 Lifetime';
+
     if (mode && GAME_MODES[mode]) {
       // Stats d'un mode spécifique
       const modeStats = stats.modes[GAME_MODES[mode].name];
 
       if (!modeStats || modeStats.matches === 0) {
+        const periodMsg = seasonOnly ? ` cette saison (${SEASONS.current.shortName})` : '';
         return interaction.editReply({
-          content: `❌ **${player.displayName}** n'a pas de stats en **${GAME_MODES[mode].name}**.`,
+          content: `❌ **${player.displayName}** n'a pas de stats en **${GAME_MODES[mode].name}**${periodMsg}.`,
         });
       }
 
-      embed.setDescription(`**Mode:** ${GAME_MODES[mode].name}`);
+      embed.setDescription(`**Mode:** ${GAME_MODES[mode].name} | ${periodText}`);
       embed.addFields(
         { name: '🏆 Victoires', value: `${modeStats.wins}`, inline: true },
         { name: '💀 Kills', value: `${modeStats.kills}`, inline: true },
@@ -122,7 +136,7 @@ export async function execute(interaction) {
       );
     } else {
       // Stats globales
-      embed.setDescription('**Stats globales (tous modes)**');
+      embed.setDescription(`**Stats globales (tous modes)** | ${periodText}`);
       embed.addFields(
         { name: '🏆 Victoires', value: `${stats.overall.wins}`, inline: true },
         { name: '💀 Kills', value: `${stats.overall.kills}`, inline: true },
@@ -149,7 +163,7 @@ export async function execute(interaction) {
       }
     }
 
-    embed.setFooter({ text: 'Stats via Epic Games API' });
+    embed.setFooter({ text: seasonOnly ? `Stats ${SEASONS.current.name}` : 'Stats via Epic Games API' });
     embed.setTimestamp();
 
     await interaction.editReply({ embeds: [embed] });
