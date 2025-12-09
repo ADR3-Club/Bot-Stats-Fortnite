@@ -30,7 +30,13 @@ export const GAME_MODES = {
 
   // Reload (différents noms internes: punchberry, tigerranch, piperboot, etc.)
   reload: { name: 'Reload', patterns: ['punchberry', 'tigerranch', 'piperboot', 'figment', 'respawn'] },
-  reload_zb: { name: 'Reload Zero Build', patterns: ['punchberrynobuild', 'tigerranchnobuild', 'piperbootnobuild', 'figmentnobuild', 'respawn_nobuild'] },
+  reload_zb: { name: 'Reload Zero Build', patterns: [
+    'punchberrynobuild', 'punchberry_nobuild', 'nobuild_punchberry',
+    'tigerranchnobuild', 'tigerranch_nobuild', 'nobuild_tigerranch',
+    'piperbootnobuild', 'piperboot_nobuild', 'nobuild_piperboot',
+    'figmentnobuild', 'figment_nobuild', 'nobuild_figment',
+    'respawn_nobuild', 'respawnnobuild', 'nobuild_respawn',
+  ] },
 
   // Ranked (habanero = ranked)
   ranked_br: { name: 'Ranked BR', patterns: ['habanero_solo', 'habanero_duo', 'habanero_squad', 'showdown'] },
