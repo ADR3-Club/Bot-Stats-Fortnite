@@ -81,17 +81,11 @@ export async function execute(interaction) {
     const platformEmojis = { psn: '<:PSN:1448005088168771656>', xbl: '<:Xbox:1448004371714408579>', epic: '<:Epic:1448004394707849287>', nintendo: '<:Switch:1448004333298782208>' };
     const platformNames = { psn: 'PlayStation', xbl: 'Xbox', epic: 'PC / Epic', nintendo: 'Nintendo Switch' };
 
+    const platformIcon = player.platform ? `${platformEmojis[player.platform]} ` : '📊 ';
     const embed = new EmbedBuilder()
-      .setTitle(`📊 Stats de ${player.displayName}`)
+      .setTitle(`${platformIcon}Stats de ${player.displayName}`)
       .setColor(0x9d5bd2)
       .setThumbnail(interaction.user.displayAvatarURL({ size: 128 }));
-
-    // Afficher la plateforme si trouvé via console
-    if (player.platform) {
-      embed.setAuthor({
-        name: `${platformEmojis[player.platform]} ${platformNames[player.platform]} • ${player.externalDisplayName}`
-      });
-    }
 
     if (mode && GAME_MODES[mode]) {
       // Stats d'un mode spécifique
