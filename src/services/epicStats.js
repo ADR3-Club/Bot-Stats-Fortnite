@@ -28,9 +28,15 @@ export const GAME_MODES = {
   // Zero Build agrégé (Solo + Duo + Squad, hors Reload)
   zero_build: { name: 'Zero Build', patterns: [], aggregate: ['Zero Build Solo', 'Zero Build Duo', 'Zero Build Squad'] },
 
-  // Reload (différents noms internes: punchberry, tigerranch, piperboot, etc.)
-  reload: { name: 'Reload', patterns: ['punchberry', 'tigerranch', 'piperboot', 'figment', 'respawn'] },
+  // Reload (noms internes: blastberry actuel, anciens: punchberry, tigerranch, piperboot, figment)
+  reload: { name: 'Reload', patterns: [
+    'blastberry',  // Nom actuel (2024+)
+    'punchberry', 'tigerranch', 'piperboot', 'figment', 'respawn',  // Anciens noms
+  ] },
   reload_zb: { name: 'Reload Zero Build', patterns: [
+    // Blastberry (actuel)
+    'blastberry_nobuild', 'blastberrynobuild', 'nobuild_blastberry',
+    // Anciens noms
     'punchberrynobuild', 'punchberry_nobuild', 'nobuild_punchberry',
     'tigerranchnobuild', 'tigerranch_nobuild', 'nobuild_tigerranch',
     'piperbootnobuild', 'piperboot_nobuild', 'nobuild_piperboot',
@@ -40,7 +46,10 @@ export const GAME_MODES = {
 
   // Ranked (habanero = ranked)
   ranked_br: { name: 'Ranked BR', patterns: ['habanero_solo', 'habanero_duo', 'habanero_squad', 'showdown'] },
-  ranked_zb: { name: 'Ranked Zero Build', patterns: ['nobuildbr_habanero', 'showdown_nobuild'] },
+  ranked_zb: { name: 'Ranked Zero Build', patterns: [
+    'nobuildbr_habanero', 'showdown_nobuild',
+    'habanero_nobuild_blastberry', 'habanero_blastberry_nobuild',  // Ranked Reload ZB
+  ] },
 
   // Autres modes
   blitz: { name: 'Blitz', patterns: ['blitz'] },
