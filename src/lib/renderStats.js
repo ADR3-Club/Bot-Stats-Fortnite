@@ -189,12 +189,13 @@ export async function renderStatsCard({ playerName, modeName, stats, period = 'L
       ctx.fillText(statInfo.value, cellX, cellY);
       ctx.restore();
 
-      // Label (petit, sous la valeur)
+      // Label avec icône (petit, sous la valeur)
       ctx.save();
       ctx.font = 'bold 14px Burbank, Arial, sans-serif';
       ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
       ctx.textAlign = 'center';
-      ctx.fillText(statInfo.label, cellX, cellY + 28);
+      const labelWithIcon = statInfo.icon ? `${statInfo.icon} ${statInfo.label}` : statInfo.label;
+      ctx.fillText(labelWithIcon, cellX, cellY + 28);
       ctx.restore();
     }
   }
@@ -212,6 +213,7 @@ export async function renderStatsCard({ playerName, modeName, stats, period = 'L
 
 /**
  * Prépare les données de stats pour l'affichage
+ * Avec icônes Unicode style fortnite.gg
  */
 function prepareStatsData(stats) {
   const wins = stats?.wins || 0;
@@ -226,14 +228,14 @@ function prepareStatsData(stats) {
   const avgMatchTime = matches > 0 ? Math.floor(minutesPlayed / matches) : 0;
 
   return {
-    wins: { value: wins.toLocaleString(), label: 'WINS' },
-    winRate: { value: `${winRate}%`, label: 'WIN RATE' },
-    matches: { value: matches.toLocaleString(), label: 'MATCHES' },
-    kd: { value: kd, label: 'K/D' },
-    killsPerMatch: { value: killsPerMatch, label: 'KILLS/MATCH' },
-    kills: { value: kills.toLocaleString(), label: 'KILLS' },
-    playtime: { value: formatPlaytimeShort(minutesPlayed), label: 'PLAY TIME' },
-    avgMatchTime: { value: `${avgMatchTime}M`, label: 'AVG. MATCH' },
+    wins: { value: wins.toLocaleString(), label: 'WINS', icon: '♕' },
+    winRate: { value: `${winRate}%`, label: 'WIN RATE', icon: '%' },
+    matches: { value: matches.toLocaleString(), label: 'MATCHES', icon: '▶' },
+    kd: { value: kd, label: 'K/D', icon: '⚔' },
+    killsPerMatch: { value: killsPerMatch, label: 'KILLS/MATCH', icon: '◎' },
+    kills: { value: kills.toLocaleString(), label: 'KILLS', icon: '✕' },
+    playtime: { value: formatPlaytimeShort(minutesPlayed), label: 'PLAY TIME', icon: '◷' },
+    avgMatchTime: { value: `${avgMatchTime}M`, label: 'AVG. MATCH', icon: '◴' },
   };
 }
 
