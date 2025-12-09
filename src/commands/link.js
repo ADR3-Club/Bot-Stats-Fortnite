@@ -22,6 +22,7 @@ export const data = new SlashCommandBuilder()
         { name: 'PlayStation', value: 'psn' },
         { name: 'Xbox', value: 'xbl' },
         { name: 'PC / Epic', value: 'epic' },
+        { name: 'Nintendo Switch', value: 'nintendo' },
       )
     )
   )
@@ -53,13 +54,14 @@ export async function execute(interaction) {
         });
       }
 
-      // Plateforme: priorité au manuel, sinon auto-détection (sauf 'epic' qui = null)
-      const platform = manualPlatform === 'epic' ? null : (manualPlatform || player.platform || null);
+      // Plateforme: priorité au manuel, sinon auto-détection
+      const platform = manualPlatform || player.platform || null;
 
       // Lier le compte
       linkAccount(interaction.user.id, player.id, player.displayName, platform);
 
-      const platformNames = { psn: 'PlayStation', xbl: 'Xbox' };
+      const platformEmojis = { psn: '<:PSN:1448005088168771656>', xbl: '<:Xbox:1448004371714408579>', epic: '<:Epic:1448004394707849287>', nintendo: '<:Switch:1448004333298782208>' };
+      const platformNames = { psn: 'PlayStation', xbl: 'Xbox', epic: 'PC / Epic', nintendo: 'Nintendo Switch' };
       const embed = new EmbedBuilder()
         .setTitle('✅ Compte lié')
         .setDescription(`Ton compte Discord est maintenant lié à **${player.displayName}**`)
@@ -74,7 +76,7 @@ export async function execute(interaction) {
       if (platform) {
         embed.spliceFields(0, 0, {
           name: 'Plateforme',
-          value: `🎮 ${platformNames[platform] || platform}`,
+          value: `${platformEmojis[platform] || '🎮'} ${platformNames[platform] || platform}`,
           inline: true,
         });
       }
@@ -116,7 +118,8 @@ export async function execute(interaction) {
       });
     }
 
-    const platformNames = { psn: 'PlayStation', xbl: 'Xbox' };
+    const platformEmojis = { psn: '<:PSN:1448005088168771656>', xbl: '<:Xbox:1448004371714408579>', epic: '<:Epic:1448004394707849287>', nintendo: '<:Switch:1448004333298782208>' };
+    const platformNames = { psn: 'PlayStation', xbl: 'Xbox', epic: 'PC / Epic', nintendo: 'Nintendo Switch' };
     const embed = new EmbedBuilder()
       .setTitle('🔗 Compte lié')
       .setColor(0x2391ec)
@@ -129,7 +132,7 @@ export async function execute(interaction) {
     if (linked.platform) {
       embed.spliceFields(1, 0, {
         name: 'Plateforme',
-        value: `🎮 ${platformNames[linked.platform] || linked.platform}`,
+        value: `${platformEmojis[linked.platform] || '🎮'} ${platformNames[linked.platform] || linked.platform}`,
         inline: true,
       });
     }

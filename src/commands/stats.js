@@ -78,8 +78,8 @@ export async function execute(interaction) {
     }
 
     // Construire l'embed
-    const platformEmojis = { psn: '🎮', xbl: '🎮', nintendo: '🕹️' };
-    const platformNames = { psn: 'PlayStation', xbl: 'Xbox', nintendo: 'Nintendo' };
+    const platformEmojis = { psn: '<:PSN:1448005088168771656>', xbl: '<:Xbox:1448004371714408579>', epic: '<:Epic:1448004394707849287>', nintendo: '<:Switch:1448004333298782208>' };
+    const platformNames = { psn: 'PlayStation', xbl: 'Xbox', epic: 'PC / Epic', nintendo: 'Nintendo Switch' };
 
     const embed = new EmbedBuilder()
       .setTitle(`📊 Stats de ${player.displayName}`)
