@@ -3,6 +3,7 @@ module.exports = {
   apps: [{
     name: 'bot-stats-fortnite',
     script: 'bot.js',
+    cwd: './',
     instances: 1,
     autorestart: true,
     watch: false,
