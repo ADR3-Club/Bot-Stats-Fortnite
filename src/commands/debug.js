@@ -46,32 +46,22 @@ export async function execute(interaction) {
     const rawStats = await client.getBRStats(accountId);
 
     if (!rawStats) {
-      return interaction.editReply({ content: '❌ Pas de stats retournées.' });
+      return interaction.editReply({ content: '❌ Pas de stats retournées (null).' });
     }
 
-    // Collecter toutes les playlists
-    const playlists = new Set();
-    const inputTypes = ['keyboardmouse', 'gamepad', 'touch'];
-
-    for (const inputType of inputTypes) {
-      const inputStats = rawStats[inputType];
-      if (!inputStats) continue;
-
-      for (const playlist of Object.keys(inputStats)) {
-        playlists.add(playlist);
-      }
-    }
-
-    const playlistList = [...playlists].sort().join('\n') || 'Aucune playlist trouvée';
+    // Afficher la structure brute
+    const keys = Object.keys(rawStats);
+    const structure = JSON.stringify(rawStats, null, 2).substring(0, 1800);
 
     const embed = new EmbedBuilder()
       .setTitle(`🔧 Debug Stats - ${displayName}`)
       .setColor(0xff9900)
       .addFields(
         { name: 'Account ID', value: accountId, inline: false },
-        { name: 'Playlists brutes', value: `\`\`\`\n${playlistList}\n\`\`\``, inline: false },
+        { name: 'Clés principales', value: `\`\`\`\n${keys.join(', ') || 'Aucune'}\n\`\`\``, inline: false },
+        { name: 'Structure (tronquée)', value: `\`\`\`json\n${structure}\n\`\`\``, inline: false },
       )
-      .setFooter({ text: 'Ces noms doivent correspondre au mapping GAME_MODES' });
+      .setFooter({ text: 'Données brutes de getBRStats()' });
 
     await interaction.editReply({ embeds: [embed] });
 
