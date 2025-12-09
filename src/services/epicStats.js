@@ -37,15 +37,6 @@ export const GAME_MODES = {
   blitz: { name: 'Blitz', patterns: ['blitz'] },
 };
 
-// Stats à récupérer
-const STAT_KEYS = [
-  'placetop1',      // Wins
-  'kills',          // Kills
-  'matchesplayed',  // Matches
-  'minutesplayed',  // Time played
-  'playersoutlived', // Players outlived
-  'score',          // Score
-];
 
 /**
  * Recherche un joueur par son pseudo Epic ou plateforme externe
@@ -107,68 +98,6 @@ export async function findPlayer(displayName) {
   }
 
   return null;
-}
-
-/**
- * Recherche un joueur par son ID Epic
- * @param {string} accountId - ID du compte Epic
- * @returns {Promise<Object|null>}
- */
-export async function findPlayerById(accountId) {
-  if (!isEpicReady()) {
-    throw new Error('Client Epic non connecté');
-  }
-
-  const client = getEpicClient();
-
-  try {
-    // fetch() accepte aussi les IDs de compte
-    const user = await client.user.fetch(accountId);
-
-    if (user) {
-      return {
-        id: user.id,
-        displayName: user.displayName,
-      };
-    }
-    return null;
-  } catch {
-    return null;
-  }
-}
-
-/**
- * Recherche un joueur par son pseudo sur une plateforme externe (PSN, Xbox)
- * @param {string} displayName - Pseudo sur la plateforme
- * @param {string} platform - Plateforme (psn, xbl)
- * @returns {Promise<Object|null>}
- */
-export async function findPlayerByExternalPlatform(displayName, platform) {
-  if (!EXTERNAL_PLATFORMS.includes(platform)) {
-    return null;
-  }
-
-  try {
-    const response = await fetch(
-      `https://fortnite-api.com/v2/stats/br/v2?name=${encodeURIComponent(displayName)}&accountType=${platform}`,
-      { headers: getFortniteApiHeaders() }
-    );
-
-    if (response.ok) {
-      const data = await response.json();
-      if (data.status === 200 && data.data?.account) {
-        return {
-          id: data.data.account.id,
-          displayName: data.data.account.name,
-          platform: platform,
-          externalDisplayName: displayName,
-        };
-      }
-    }
-    return null;
-  } catch {
-    return null;
-  }
 }
 
 /**
@@ -312,26 +241,6 @@ function formatStats(rawStats) {
 }
 
 /**
- * Récupère les stats d'un mode spécifique
- * @param {string} accountId
- * @param {string} modeKey - Clé du mode (solo, duo, zb_solo, reload, etc.)
- */
-export async function getPlayerStatsByMode(accountId, modeKey) {
-  const stats = await getPlayerStats(accountId);
-
-  if (!stats || stats.private) {
-    return stats;
-  }
-
-  const mode = GAME_MODES[modeKey];
-  if (!mode) {
-    return null;
-  }
-
-  return stats.modes[mode.name] || null;
-}
-
-/**
  * Liste des modes disponibles pour l'autocomplétion
  */
 export function getAvailableModes() {
@@ -339,4 +248,20 @@ export function getAvailableModes() {
     name: value.name,
     value: key,
   }));
+}
+
+/**
+ * Formate le temps de jeu en format lisible
+ * @param {number} minutes - Temps en minutes
+ * @returns {string} - Temps formaté (ex: "5j 12h" ou "3h 45m")
+ */
+export function formatPlaytime(minutes) {
+  if (!minutes) return '0h';
+  const hours = Math.floor(minutes / 60);
+  if (hours >= 24) {
+    const days = Math.floor(hours / 24);
+    const remainingHours = hours % 24;
+    return `${days}j ${remainingHours}h`;
+  }
+  return `${hours}h ${minutes % 60}m`;
 }

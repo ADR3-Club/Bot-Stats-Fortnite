@@ -1,6 +1,6 @@
 // src/commands/me.js
-import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
-import { getPlayerStats, getAvailableModes, GAME_MODES } from '../services/epicStats.js';
+import { SlashCommandBuilder, EmbedBuilder, MessageFlags } from 'discord.js';
+import { getPlayerStats, getAvailableModes, GAME_MODES, formatPlaytime } from '../services/epicStats.js';
 import { getLinkedAccount, getCachedStats, cacheStats } from '../database/db.js';
 
 export const data = new SlashCommandBuilder()
@@ -22,7 +22,7 @@ export async function execute(interaction) {
   if (!linked) {
     return interaction.reply({
       content: '❌ Tu n\'as pas de compte Epic lié.\nUtilise `/link set <pseudo>` pour en lier un.',
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
     });
   }
 
@@ -114,15 +114,4 @@ export async function execute(interaction) {
       content: `❌ Erreur: ${e.message}`,
     });
   }
-}
-
-function formatPlaytime(minutes) {
-  if (!minutes) return '0h';
-  const hours = Math.floor(minutes / 60);
-  if (hours >= 24) {
-    const days = Math.floor(hours / 24);
-    const remainingHours = hours % 24;
-    return `${days}j ${remainingHours}h`;
-  }
-  return `${hours}h ${minutes % 60}m`;
 }
