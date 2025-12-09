@@ -189,13 +189,27 @@ export async function renderStatsCard({ playerName, modeName, stats, period = 'L
       ctx.fillText(statInfo.value, cellX, cellY);
       ctx.restore();
 
-      // Label avec icône (petit, sous la valeur)
+      // Label avec icône vectorielle (petit, sous la valeur)
       ctx.save();
       ctx.font = 'bold 14px Burbank, Arial, sans-serif';
       ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
       ctx.textAlign = 'center';
-      const labelWithIcon = statInfo.icon ? `${statInfo.icon} ${statInfo.label}` : statInfo.label;
-      ctx.fillText(labelWithIcon, cellX, cellY + 28);
+
+      // Mesurer le label pour positionner l'icône
+      const labelWidth = ctx.measureText(statInfo.label).width;
+      const iconSize = 12;
+      const gap = 4;
+      const totalWidth = iconSize + gap + labelWidth;
+      const startX = cellX - totalWidth / 2;
+
+      // Dessiner l'icône
+      if (statInfo.iconType) {
+        drawIcon(ctx, statInfo.iconType, startX + iconSize / 2, cellY + 24, iconSize);
+      }
+
+      // Dessiner le label
+      ctx.textAlign = 'left';
+      ctx.fillText(statInfo.label, startX + iconSize + gap, cellY + 28);
       ctx.restore();
     }
   }
@@ -213,7 +227,6 @@ export async function renderStatsCard({ playerName, modeName, stats, period = 'L
 
 /**
  * Prépare les données de stats pour l'affichage
- * Avec icônes Unicode style fortnite.gg
  */
 function prepareStatsData(stats) {
   const wins = stats?.wins || 0;
@@ -228,15 +241,156 @@ function prepareStatsData(stats) {
   const avgMatchTime = matches > 0 ? Math.floor(minutesPlayed / matches) : 0;
 
   return {
-    wins: { value: wins.toLocaleString(), label: 'WINS', icon: '♕' },
-    winRate: { value: `${winRate}%`, label: 'WIN RATE', icon: '%' },
-    matches: { value: matches.toLocaleString(), label: 'MATCHES', icon: '▶' },
-    kd: { value: kd, label: 'K/D', icon: '⚔' },
-    killsPerMatch: { value: killsPerMatch, label: 'KILLS/MATCH', icon: '◎' },
-    kills: { value: kills.toLocaleString(), label: 'KILLS', icon: '✕' },
-    playtime: { value: formatPlaytimeShort(minutesPlayed), label: 'PLAY TIME', icon: '◷' },
-    avgMatchTime: { value: `${avgMatchTime}M`, label: 'AVG. MATCH', icon: '◴' },
+    wins: { value: wins.toLocaleString(), label: 'WINS', iconType: 'crown' },
+    winRate: { value: `${winRate}%`, label: 'WIN RATE', iconType: 'percent' },
+    matches: { value: matches.toLocaleString(), label: 'MATCHES', iconType: 'play' },
+    kd: { value: kd, label: 'K/D', iconType: 'swords' },
+    killsPerMatch: { value: killsPerMatch, label: 'KILLS/MATCH', iconType: 'crosshair' },
+    kills: { value: kills.toLocaleString(), label: 'KILLS', iconType: 'skull' },
+    playtime: { value: formatPlaytimeShort(minutesPlayed), label: 'PLAY TIME', iconType: 'clock' },
+    avgMatchTime: { value: `${avgMatchTime}M`, label: 'AVG. MATCH', iconType: 'timer' },
   };
+}
+
+/**
+ * Dessine une icône vectorielle
+ * @param {CanvasRenderingContext2D} ctx
+ * @param {string} type - Type d'icône
+ * @param {number} x - Position X (centre)
+ * @param {number} y - Position Y (centre)
+ * @param {number} size - Taille de l'icône
+ */
+function drawIcon(ctx, type, x, y, size) {
+  ctx.save();
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+  ctx.lineWidth = 1.5;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+
+  const s = size / 2; // demi-taille
+
+  switch (type) {
+    case 'crown': // Couronne pour les wins
+      ctx.beginPath();
+      ctx.moveTo(x - s, y + s * 0.6);
+      ctx.lineTo(x - s, y - s * 0.2);
+      ctx.lineTo(x - s * 0.5, y + s * 0.2);
+      ctx.lineTo(x, y - s * 0.6);
+      ctx.lineTo(x + s * 0.5, y + s * 0.2);
+      ctx.lineTo(x + s, y - s * 0.2);
+      ctx.lineTo(x + s, y + s * 0.6);
+      ctx.closePath();
+      ctx.fill();
+      break;
+
+    case 'percent': // Pourcentage
+      ctx.font = `bold ${size}px Arial`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('%', x, y);
+      break;
+
+    case 'play': // Triangle play pour matches
+      ctx.beginPath();
+      ctx.moveTo(x - s * 0.4, y - s * 0.7);
+      ctx.lineTo(x + s * 0.7, y);
+      ctx.lineTo(x - s * 0.4, y + s * 0.7);
+      ctx.closePath();
+      ctx.fill();
+      break;
+
+    case 'swords': // Épées croisées pour K/D
+      ctx.beginPath();
+      // Épée 1 (diagonal /)
+      ctx.moveTo(x - s * 0.7, y + s * 0.7);
+      ctx.lineTo(x + s * 0.7, y - s * 0.7);
+      // Garde
+      ctx.moveTo(x - s * 0.3, y - s * 0.1);
+      ctx.lineTo(x + s * 0.1, y + s * 0.3);
+      ctx.stroke();
+      // Épée 2 (diagonal \)
+      ctx.beginPath();
+      ctx.moveTo(x + s * 0.7, y + s * 0.7);
+      ctx.lineTo(x - s * 0.7, y - s * 0.7);
+      // Garde
+      ctx.moveTo(x + s * 0.3, y - s * 0.1);
+      ctx.lineTo(x - s * 0.1, y + s * 0.3);
+      ctx.stroke();
+      break;
+
+    case 'crosshair': // Viseur pour kills/match
+      ctx.beginPath();
+      // Cercle central
+      ctx.arc(x, y, s * 0.3, 0, Math.PI * 2);
+      ctx.stroke();
+      // Lignes du viseur
+      ctx.beginPath();
+      ctx.moveTo(x, y - s * 0.8);
+      ctx.lineTo(x, y - s * 0.5);
+      ctx.moveTo(x, y + s * 0.5);
+      ctx.lineTo(x, y + s * 0.8);
+      ctx.moveTo(x - s * 0.8, y);
+      ctx.lineTo(x - s * 0.5, y);
+      ctx.moveTo(x + s * 0.5, y);
+      ctx.lineTo(x + s * 0.8, y);
+      ctx.stroke();
+      break;
+
+    case 'skull': // Crâne pour kills
+      // Tête
+      ctx.beginPath();
+      ctx.arc(x, y - s * 0.1, s * 0.6, Math.PI, 0);
+      ctx.lineTo(x + s * 0.6, y + s * 0.2);
+      ctx.quadraticCurveTo(x + s * 0.3, y + s * 0.6, x, y + s * 0.4);
+      ctx.quadraticCurveTo(x - s * 0.3, y + s * 0.6, x - s * 0.6, y + s * 0.2);
+      ctx.closePath();
+      ctx.fill();
+      // Yeux (trous)
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+      ctx.beginPath();
+      ctx.arc(x - s * 0.25, y - s * 0.1, s * 0.15, 0, Math.PI * 2);
+      ctx.arc(x + s * 0.25, y - s * 0.1, s * 0.15, 0, Math.PI * 2);
+      ctx.fill();
+      break;
+
+    case 'clock': // Horloge pour playtime
+      ctx.beginPath();
+      ctx.arc(x, y, s * 0.7, 0, Math.PI * 2);
+      ctx.stroke();
+      // Aiguilles
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(x, y - s * 0.4);
+      ctx.moveTo(x, y);
+      ctx.lineTo(x + s * 0.3, y + s * 0.1);
+      ctx.stroke();
+      break;
+
+    case 'timer': // Timer/chrono pour avg match
+      ctx.beginPath();
+      ctx.arc(x, y + s * 0.1, s * 0.6, 0, Math.PI * 2);
+      ctx.stroke();
+      // Bouton du haut
+      ctx.beginPath();
+      ctx.moveTo(x - s * 0.15, y - s * 0.5);
+      ctx.lineTo(x + s * 0.15, y - s * 0.5);
+      ctx.lineTo(x + s * 0.15, y - s * 0.7);
+      ctx.lineTo(x - s * 0.15, y - s * 0.7);
+      ctx.closePath();
+      ctx.fill();
+      // Aiguille
+      ctx.beginPath();
+      ctx.moveTo(x, y + s * 0.1);
+      ctx.lineTo(x + s * 0.25, y - s * 0.2);
+      ctx.stroke();
+      break;
+
+    default:
+      break;
+  }
+
+  ctx.restore();
 }
 
 /**
