@@ -6,6 +6,7 @@ import { join } from 'node:path';
 import { DateTime } from 'luxon';
 import { initDb, runMaintenance } from './src/database/db.js';
 import { initEpicClient, getEpicClient } from './src/services/epicAuth.js';
+import { updateCurrentSeason } from './src/services/epicStats.js';
 
 // ========= LOGGING =========
 export function log(message, level = 'INFO') {
@@ -85,6 +86,9 @@ client.once('clientReady', async (c) => {
     log(`Erreur Epic: ${e.message}`, 'ERROR');
     log('Le bot fonctionne mais les stats ne seront pas disponibles', 'WARN');
   }
+
+  // Mettre à jour la saison actuelle
+  await updateCurrentSeason();
 
   // Déployer commandes sur toutes les guildes
   for (const [id] of client.guilds.cache) {

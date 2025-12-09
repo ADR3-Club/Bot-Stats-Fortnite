@@ -4,24 +4,104 @@ import { getEpicClient, isEpicReady } from './epicAuth.js';
 // Plateformes externes supportées
 const EXTERNAL_PLATFORMS = ['psn', 'xbl'];  // fortnite-api.com supporte psn et xbl
 
-// Configuration des saisons Fortnite (timestamps en secondes UTC)
-// Mise à jour nécessaire à chaque nouvelle saison
-export const SEASONS = {
-  c6s1: {
-    name: 'Chapitre 6 Saison 1',
-    shortName: 'C6S1',
-    startDate: new Date('2024-12-01T07:00:00Z'),
-    get startTime() { return Math.floor(this.startDate.getTime() / 1000); },
-  },
-  c7s1: {
-    name: 'Chapitre 7 Saison 1',
-    shortName: 'C7S1',
-    startDate: new Date('2025-11-30T07:00:00Z'),  // 30 novembre 2025 à 8h CET (après event Zero Hour)
-    get startTime() { return Math.floor(this.startDate.getTime() / 1000); },
-  },
-  // Saison actuelle (alias)
-  get current() { return this.c7s1; },
+// Configuration des saisons Fortnite - mise à jour automatique au démarrage
+// Fallback statique si l'API échoue
+const SEASON_FALLBACKS = {
+  c6s1: { name: 'Chapitre 6 Saison 1', shortName: 'C6S1', startDate: '2024-12-01T07:00:00Z' },
+  c7s1: { name: 'Chapitre 7 Saison 1', shortName: 'C7S1', startDate: '2025-11-30T07:00:00Z' },
 };
+
+// Saison courante (mise à jour dynamiquement)
+let currentSeason = {
+  name: SEASON_FALLBACKS.c7s1.name,
+  shortName: SEASON_FALLBACKS.c7s1.shortName,
+  startDate: new Date(SEASON_FALLBACKS.c7s1.startDate),
+  get startTime() { return Math.floor(this.startDate.getTime() / 1000); },
+};
+
+// Export SEASONS avec getter dynamique
+export const SEASONS = {
+  get current() { return currentSeason; },
+};
+
+/**
+ * Récupère et met à jour la saison actuelle depuis fortnite-api.com
+ * Appelé au démarrage du bot
+ */
+export async function updateCurrentSeason() {
+  try {
+    // Utiliser l'endpoint AES qui contient la version du build (ex: 39.00 = Season 39)
+    const response = await fetch('https://fortnite-api.com/v2/aes', {
+      headers: getFortniteApiHeaders(),
+    });
+
+    if (!response.ok) return;
+
+    const data = await response.json();
+    if (data.status !== 200 || !data.data?.build) return;
+
+    // Extraire le numéro de version (ex: "+Fortnite+Release-39.00-CL-..." → 39)
+    const buildMatch = data.data.build.match(/Release-(\d+)\./);
+    if (!buildMatch) return;
+
+    const seasonNumber = parseInt(buildMatch[1], 10);
+
+    // Calculer chapitre et saison (Chapter 2 = Season 11-20, Chapter 3 = 21-24, etc.)
+    // Seasons: C1=1-10, C2=11-18, C3=19-22, C4=23-26, C5=27-30, C6=31-34, OG=35-38, C7=39+
+    let chapter, seasonInChapter;
+    if (seasonNumber >= 39) {
+      chapter = 7;
+      seasonInChapter = seasonNumber - 38;
+    } else if (seasonNumber >= 35) {
+      chapter = 6; // OG seasons counted as C6
+      seasonInChapter = seasonNumber - 34;
+    } else if (seasonNumber >= 31) {
+      chapter = 6;
+      seasonInChapter = seasonNumber - 30;
+    } else if (seasonNumber >= 27) {
+      chapter = 5;
+      seasonInChapter = seasonNumber - 26;
+    } else {
+      // Fallback pour anciennes saisons
+      return;
+    }
+
+    const shortName = `C${chapter}S${seasonInChapter}`;
+    const name = `Chapitre ${chapter} Saison ${seasonInChapter}`;
+
+    // Chercher si on a une date de début dans les fallbacks
+    const fallbackKey = `c${chapter}s${seasonInChapter}`;
+    const fallback = SEASON_FALLBACKS[fallbackKey];
+
+    if (fallback) {
+      currentSeason = {
+        name: fallback.name,
+        shortName: fallback.shortName,
+        startDate: new Date(fallback.startDate),
+        get startTime() { return Math.floor(this.startDate.getTime() / 1000); },
+      };
+    } else {
+      // Nouvelle saison non configurée - utiliser date approximative (saison dure ~90j)
+      // On estime que la saison a commencé il y a moins de 90 jours
+      const estimatedStart = new Date();
+      estimatedStart.setDate(estimatedStart.getDate() - 45); // Milieu de saison approximatif
+      estimatedStart.setHours(7, 0, 0, 0);
+
+      currentSeason = {
+        name,
+        shortName,
+        startDate: estimatedStart,
+        get startTime() { return Math.floor(this.startDate.getTime() / 1000); },
+      };
+
+      console.log(`[WARN] Nouvelle saison détectée: ${shortName} - Date estimée. Ajouter dans SEASON_FALLBACKS.`);
+    }
+
+    console.log(`[INFO] Saison actuelle: ${currentSeason.shortName}`);
+  } catch (e) {
+    console.log(`[WARN] Impossible de récupérer la saison: ${e.message}`);
+  }
+}
 
 // Headers pour fortnite-api.com (avec clé API si disponible)
 function getFortniteApiHeaders() {
