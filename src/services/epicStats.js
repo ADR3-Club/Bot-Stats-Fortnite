@@ -181,6 +181,8 @@ function formatStats(rawStats) {
         kills: 0,
         matches: 0,
         minutesPlayed: 0,
+        playersOutlived: 0,
+        score: 0,
       };
     }
 
@@ -197,6 +199,12 @@ function formatStats(rawStats) {
     } else if (statType === 'minutesplayed') {
       playlistStats[modeName].minutesPlayed += value;
       result.overall.minutesPlayed += value;
+    } else if (statType === 'playersoutlived') {
+      playlistStats[modeName].playersOutlived += value;
+      result.overall.playersOutlived = (result.overall.playersOutlived || 0) + value;
+    } else if (statType === 'score') {
+      playlistStats[modeName].score += value;
+      result.overall.score = (result.overall.score || 0) + value;
     }
   }
 
@@ -207,6 +215,9 @@ function formatStats(rawStats) {
       wins: modeStats.wins,
       kills: modeStats.kills,
       matches: modeStats.matches,
+      minutesPlayed: modeStats.minutesPlayed,
+      playersOutlived: modeStats.playersOutlived,
+      score: modeStats.score,
       kd: deaths > 0 ? (modeStats.kills / deaths).toFixed(2) : modeStats.kills.toString(),
       winRate: modeStats.matches > 0
         ? ((modeStats.wins / modeStats.matches) * 100).toFixed(1)

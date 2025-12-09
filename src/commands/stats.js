@@ -99,6 +99,9 @@ export async function execute(interaction) {
         { name: '🎮 Parties', value: `${modeStats.matches}`, inline: true },
         { name: '📈 K/D', value: `${modeStats.kd}`, inline: true },
         { name: '🎯 Win Rate', value: `${modeStats.winRate}%`, inline: true },
+        { name: '👥 Outlived', value: `${modeStats.playersOutlived || 0}`, inline: true },
+        { name: '⭐ Score', value: `${(modeStats.score || 0).toLocaleString()}`, inline: true },
+        { name: '⏱️ Temps', value: formatPlaytime(modeStats.minutesPlayed || 0), inline: true },
       );
     } else {
       // Stats globales
@@ -109,6 +112,8 @@ export async function execute(interaction) {
         { name: '🎮 Parties', value: `${stats.overall.matches}`, inline: true },
         { name: '📈 K/D', value: `${stats.overall.kd}`, inline: true },
         { name: '🎯 Win Rate', value: `${stats.overall.winRate}%`, inline: true },
+        { name: '👥 Outlived', value: `${(stats.overall.playersOutlived || 0).toLocaleString()}`, inline: true },
+        { name: '⭐ Score', value: `${(stats.overall.score || 0).toLocaleString()}`, inline: true },
         { name: '⏱️ Temps joué', value: formatPlaytime(stats.overall.minutesPlayed), inline: true },
       );
 
