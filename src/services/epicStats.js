@@ -46,11 +46,23 @@ export async function findPlayer(displayName) {
   const client = getEpicClient();
 
   try {
-    // Recherche par displayName
-    const users = await client.getProfile(displayName);
-    return users;
+    // Recherche par displayName via l'API HTTP
+    const user = await client.http.sendEpicgamesRequest(
+      true,
+      'GET',
+      `https://account-public-service-prod.ol.epicgames.com/account/api/public/account/displayName/${encodeURIComponent(displayName)}`,
+      'fortnite'
+    );
+
+    if (user) {
+      return {
+        id: user.id,
+        displayName: user.displayName,
+      };
+    }
+    return null;
   } catch (e) {
-    if (e.message?.includes('not found')) {
+    if (e.code === 'errors.com.epicgames.account.account_not_found') {
       return null;
     }
     throw e;
@@ -70,8 +82,20 @@ export async function findPlayerById(accountId) {
   const client = getEpicClient();
 
   try {
-    const user = await client.getProfile(accountId);
-    return user;
+    const user = await client.http.sendEpicgamesRequest(
+      true,
+      'GET',
+      `https://account-public-service-prod.ol.epicgames.com/account/api/public/account/${accountId}`,
+      'fortnite'
+    );
+
+    if (user) {
+      return {
+        id: user.id,
+        displayName: user.displayName,
+      };
+    }
+    return null;
   } catch {
     return null;
   }
