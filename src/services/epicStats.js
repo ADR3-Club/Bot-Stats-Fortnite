@@ -4,6 +4,15 @@ import { getEpicClient, isEpicReady } from './epicAuth.js';
 // Plateformes externes supportées
 const EXTERNAL_PLATFORMS = ['psn', 'xbl'];  // fortnite-api.com supporte psn et xbl
 
+// Headers pour fortnite-api.com (avec clé API si disponible)
+function getFortniteApiHeaders() {
+  const headers = {};
+  if (process.env.FORTNITE_API_KEY) {
+    headers['Authorization'] = process.env.FORTNITE_API_KEY;
+  }
+  return headers;
+}
+
 // Mapping des modes de jeu - patterns pour matcher les playlists Epic
 export const GAME_MODES = {
   // Battle Royale standard
@@ -68,11 +77,17 @@ export async function findPlayer(displayName) {
     }
   }
 
-  // 2. Essayer les plateformes externes via fortnite-api.com (gratuit)
+  // 2. Essayer les plateformes externes via fortnite-api.com (nécessite clé API)
+  if (!process.env.FORTNITE_API_KEY) {
+    // Sans clé API, le lookup PSN/Xbox ne marchera pas
+    return null;
+  }
+
   for (const platform of EXTERNAL_PLATFORMS) {
     try {
       const response = await fetch(
-        `https://fortnite-api.com/v2/stats/br/v2?name=${encodeURIComponent(displayName)}&accountType=${platform}`
+        `https://fortnite-api.com/v2/stats/br/v2?name=${encodeURIComponent(displayName)}&accountType=${platform}`,
+        { headers: getFortniteApiHeaders() }
       );
 
       if (response.ok) {
@@ -135,7 +150,8 @@ export async function findPlayerByExternalPlatform(displayName, platform) {
 
   try {
     const response = await fetch(
-      `https://fortnite-api.com/v2/stats/br/v2?name=${encodeURIComponent(displayName)}&accountType=${platform}`
+      `https://fortnite-api.com/v2/stats/br/v2?name=${encodeURIComponent(displayName)}&accountType=${platform}`,
+      { headers: getFortniteApiHeaders() }
     );
 
     if (response.ok) {
