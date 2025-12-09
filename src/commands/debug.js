@@ -49,19 +49,25 @@ export async function execute(interaction) {
       return interaction.editReply({ content: '❌ Pas de stats retournées (null).' });
     }
 
-    // Afficher la structure brute
-    const keys = Object.keys(rawStats);
-    const structure = JSON.stringify(rawStats, null, 2).substring(0, 1800);
+    // Extraire les playlists uniques
+    const stats = rawStats?.data?.stats || {};
+    const playlists = new Set();
+
+    for (const key of Object.keys(stats)) {
+      const match = key.match(/playlist_(.+)$/);
+      if (match) playlists.add(match[1]);
+    }
+
+    const playlistList = [...playlists].sort().slice(0, 20).join('\n') || 'Aucune';
 
     const embed = new EmbedBuilder()
       .setTitle(`🔧 Debug Stats - ${displayName}`)
       .setColor(0xff9900)
       .addFields(
         { name: 'Account ID', value: accountId, inline: false },
-        { name: 'Clés principales', value: `\`\`\`\n${keys.join(', ') || 'Aucune'}\n\`\`\``, inline: false },
-        { name: 'Structure (tronquée)', value: `\`\`\`json\n${structure}\n\`\`\``, inline: false },
+        { name: `Playlists (${playlists.size})`, value: `\`\`\`\n${playlistList}\n\`\`\``, inline: false },
       )
-      .setFooter({ text: 'Données brutes de getBRStats()' });
+      .setFooter({ text: 'Noms bruts des playlists Epic' });
 
     await interaction.editReply({ embeds: [embed] });
 
