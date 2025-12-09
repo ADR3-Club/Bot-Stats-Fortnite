@@ -25,33 +25,23 @@ if (existsSync('device_auth.json')) {
   const overwrite = await question('Écraser ? (o/n): ');
   if (overwrite.toLowerCase() !== 'o') {
     console.log('Annulé.');
+    rl.close();
     process.exit(0);
   }
 }
 
 console.log();
-console.log('1. Ouvre ce lien dans ton navigateur :');
+console.log('fnbr.js va te demander un code d\'autorisation.');
+console.log('Un lien va s\'afficher, ouvre-le et connecte-toi.');
 console.log();
-console.log('   https://www.epicgames.com/id/api/redirect?clientId=3446cd72694c4a4485d81b77adbb2141&responseType=code');
-console.log();
-console.log('2. Connecte-toi avec le compte Epic du bot');
-console.log('3. Copie le "authorizationCode" de la réponse JSON');
-console.log();
-
-const authCode = await question('Code d\'autorisation: ');
-
-if (!authCode || authCode.length < 10) {
-  console.error('Code invalide.');
-  process.exit(1);
-}
-
-console.log();
-console.log('Authentification en cours...');
 
 try {
   const client = new Client({
     auth: {
-      authorizationCode: authCode.trim(),
+      authorizationCode: async () => {
+        const code = await Client.consoleQuestion('Entrez le code d\'autorisation: ');
+        return code;
+      },
     },
   });
 
@@ -69,13 +59,6 @@ try {
     console.log('Device Auth généré avec succès !');
     console.log();
     console.log('Fichier créé: device_auth.json');
-    console.log();
-    console.log('Contenu à ajouter dans .env :');
-    console.log('-'.repeat(40));
-    console.log(`EPIC_ACCOUNT_ID=${da.accountId}`);
-    console.log(`EPIC_DEVICE_ID=${da.deviceId}`);
-    console.log(`EPIC_SECRET=${da.secret}`);
-    console.log('-'.repeat(40));
     console.log();
   });
 
