@@ -16,7 +16,7 @@ export const data = new SlashCommandBuilder()
 export async function execute(interaction) {
   const pseudo = interaction.options.getString('pseudo');
 
-  await interaction.deferReply({ ephemeral: true });
+  await interaction.deferReply({ flags: 64 }); // Ephemeral
 
   try {
     if (!isEpicReady()) {
