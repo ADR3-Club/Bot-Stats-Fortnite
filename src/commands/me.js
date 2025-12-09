@@ -57,11 +57,17 @@ export async function execute(interaction) {
     const platformEmojis = { psn: '<:PSN:1448005088168771656>', xbl: '<:Xbox:1448004371714408579>', epic: '<:Epic:1448004394707849287>', nintendo: '<:Switch:1448004333298782208>' };
     const platformNames = { psn: 'PlayStation', xbl: 'Xbox', epic: 'PC / Epic', nintendo: 'Nintendo Switch' };
 
-    const platformIcon = linked.platform ? `${platformEmojis[linked.platform]} ` : '📊 ';
     const embed = new EmbedBuilder()
-      .setTitle(`${platformIcon}Tes stats - ${linked.epic_display_name}`)
+      .setTitle(`Tes stats - ${linked.epic_display_name}`)
       .setColor(0x9d5bd2)
       .setThumbnail(interaction.user.displayAvatarURL());
+
+    // Afficher la plateforme en author si connue
+    if (linked.platform) {
+      embed.setAuthor({
+        name: `${platformEmojis[linked.platform]} ${platformNames[linked.platform]}`,
+      });
+    }
 
     if (mode && GAME_MODES[mode]) {
       // Stats d'un mode spécifique
