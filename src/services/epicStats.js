@@ -113,45 +113,33 @@ function getFortniteApiHeaders() {
 }
 
 // Mapping des modes de jeu - patterns pour matcher les playlists Epic
+// Modes: Reload ZB, Blitz, Zero Build (Solo/Duo/Squad + agrégé)
 export const GAME_MODES = {
-  // Battle Royale standard
-  solo: { name: 'Solo', patterns: ['defaultsolo', 'brsolo'] },
-  duo: { name: 'Duo', patterns: ['defaultduo', 'brduo'] },
-  squad: { name: 'Squad', patterns: ['defaultsquad', 'brsquad', 'defaultsquads'] },
-
-  // Zero Build (modes individuels)
-  zb_solo: { name: 'Zero Build Solo', patterns: ['nobuildbr_solo', 'nobuildbrsolo'] },
-  zb_duo: { name: 'Zero Build Duo', patterns: ['nobuildbr_duo', 'nobuildbrduo'] },
-  zb_squad: { name: 'Zero Build Squad', patterns: ['nobuildbr_squad', 'nobuildbrsquad'] },
-
-  // Zero Build agrégé (Solo + Duo + Squad, hors Reload)
-  zero_build: { name: 'Zero Build', patterns: [], aggregate: ['Zero Build Solo', 'Zero Build Duo', 'Zero Build Squad'] },
-
-  // Reload (noms internes: blastberry actuel, anciens: punchberry, tigerranch, piperboot, figment)
-  reload: { name: 'Reload', patterns: [
-    'blastberry',  // Nom actuel (2024+)
-    'punchberry', 'tigerranch', 'piperboot', 'figment', 'respawn',  // Anciens noms
-  ] },
-  reload_zb: { name: 'Reload Zero Build', patterns: [
-    // Blastberry (actuel)
+  // Reload Zero Build (patterns spécifiques avant patterns génériques)
+  reload_zb: { name: 'Reload', patterns: [
+    // Blastberry (actuel) - tous les variants nobuild
     'blastberry_nobuild', 'blastberrynobuild', 'nobuild_blastberry',
+    'blastberry_duos_nobuild', 'blastberry_squads_nobuild', 'blastberry_trios_nobuild',
     // Anciens noms
     'punchberrynobuild', 'punchberry_nobuild', 'nobuild_punchberry',
     'tigerranchnobuild', 'tigerranch_nobuild', 'nobuild_tigerranch',
     'piperbootnobuild', 'piperboot_nobuild', 'nobuild_piperboot',
     'figmentnobuild', 'figment_nobuild', 'nobuild_figment',
     'respawn_nobuild', 'respawnnobuild', 'nobuild_respawn',
+    // Fallback: tout blastberry (le mode actuel est ZB par défaut)
+    'blastberry',
   ] },
 
-  // Ranked (habanero = ranked)
-  ranked_br: { name: 'Ranked BR', patterns: ['habanero_solo', 'habanero_duo', 'habanero_squad', 'showdown'] },
-  ranked_zb: { name: 'Ranked Zero Build', patterns: [
-    'nobuildbr_habanero', 'showdown_nobuild',
-    'habanero_nobuild_blastberry', 'habanero_blastberry_nobuild',  // Ranked Reload ZB
-  ] },
-
-  // Autres modes
+  // Blitz
   blitz: { name: 'Blitz', patterns: ['blitz'] },
+
+  // Zero Build - modes individuels (visibles dans les choix)
+  zb_solo: { name: 'Zero Build Solo', patterns: ['nobuildbr_solo', 'nobuildbrsolo'] },
+  zb_duo: { name: 'Zero Build Duo', patterns: ['nobuildbr_duo', 'nobuildbrduo'] },
+  zb_squad: { name: 'Zero Build Squad', patterns: ['nobuildbr_squad', 'nobuildbrsquad'] },
+
+  // Zero Build agrégé (Solo + Duo + Squad)
+  zero_build: { name: 'Zero Build', patterns: [], aggregate: ['Zero Build Solo', 'Zero Build Duo', 'Zero Build Squad'] },
 };
 
 

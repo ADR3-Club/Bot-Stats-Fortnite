@@ -1,15 +1,16 @@
 // src/commands/stats.js
-import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
-import { findPlayer, getPlayerStats, getAvailableModes, GAME_MODES, SEASONS, formatPlaytime } from '../services/epicStats.js';
+import { SlashCommandBuilder, AttachmentBuilder } from 'discord.js';
+import { findPlayer, getPlayerStats, getAvailableModes, GAME_MODES, SEASONS } from '../services/epicStats.js';
 import { getCachedStats, cacheStats, getLinkedAccount } from '../database/db.js';
+import { renderStatsCard } from '../lib/renderStats.js';
 
 export const data = new SlashCommandBuilder()
   .setName('stats')
   .setDescription('Affiche les stats Fortnite d\'un joueur')
   .addStringOption(o => o
     .setName('mode')
-    .setDescription('Mode de jeu spécifique')
-    .setRequired(false)
+    .setDescription('Mode de jeu')
+    .setRequired(true)
     .addChoices(...getAvailableModes())
   )
   .addStringOption(o => o
@@ -25,7 +26,7 @@ export const data = new SlashCommandBuilder()
 
 export async function execute(interaction) {
   const pseudo = interaction.options.getString('pseudo');
-  const mode = interaction.options.getString('mode');
+  const mode = interaction.options.getString('mode', true);
   const seasonOnly = interaction.options.getBoolean('saison') || false;
 
   await interaction.deferReply();
@@ -61,7 +62,6 @@ export async function execute(interaction) {
 
     // Options pour le filtrage par saison
     const statsOptions = seasonOnly ? { startTime: SEASONS.current.startTime } : {};
-    const cacheKey = seasonOnly ? `${player.id}_season` : player.id;
 
     // Vérifier le cache (seulement pour stats lifetime)
     let stats = seasonOnly ? null : getCachedStats(player.id);
@@ -87,86 +87,40 @@ export async function execute(interaction) {
       });
     }
 
-    // Construire l'embed
-    const platformIcons = {
-      psn: 'https://cdn.discordapp.com/emojis/1448005088168771656.png',
-      xbl: 'https://cdn.discordapp.com/emojis/1448004371714408579.png',
-      epic: 'https://cdn.discordapp.com/emojis/1448004394707849287.png',
-      nintendo: 'https://cdn.discordapp.com/emojis/1448004333298782208.png',
-    };
-    const platformNames = { psn: 'PlayStation', xbl: 'Xbox', epic: 'PC / Epic', nintendo: 'Nintendo Switch' };
-
-    const embed = new EmbedBuilder()
-      .setTitle(`Stats de ${player.displayName}`)
-      .setColor(0x9d5bd2)
-      .setThumbnail(interaction.user.displayAvatarURL({ size: 128 }));
-
-    // Afficher la plateforme en author si connue
-    if (player.platform) {
-      embed.setAuthor({
-        name: platformNames[player.platform] || player.platform,
-        iconURL: platformIcons[player.platform],
+    // Récupérer les stats du mode
+    const modeConfig = GAME_MODES[mode];
+    if (!modeConfig) {
+      return interaction.editReply({
+        content: `❌ Mode **${mode}** non reconnu.`,
       });
     }
 
-    // Texte pour la période
-    const periodText = seasonOnly ? `📅 ${SEASONS.current.shortName}` : '🌐 Lifetime';
+    const modeStats = stats.modes[modeConfig.name];
 
-    if (mode && GAME_MODES[mode]) {
-      // Stats d'un mode spécifique
-      const modeStats = stats.modes[GAME_MODES[mode].name];
-
-      if (!modeStats || modeStats.matches === 0) {
-        const periodMsg = seasonOnly ? ` cette saison (${SEASONS.current.shortName})` : '';
-        return interaction.editReply({
-          content: `❌ **${player.displayName}** n'a pas de stats en **${GAME_MODES[mode].name}**${periodMsg}.`,
-        });
-      }
-
-      embed.setDescription(`**Mode:** ${GAME_MODES[mode].name} | ${periodText}`);
-      embed.addFields(
-        { name: '🏆 Victoires', value: `${modeStats.wins}`, inline: true },
-        { name: '💀 Kills', value: `${modeStats.kills}`, inline: true },
-        { name: '🎮 Parties', value: `${modeStats.matches}`, inline: true },
-        { name: '📈 K/D', value: `${modeStats.kd}`, inline: true },
-        { name: '🎯 Win Rate', value: `${modeStats.winRate}%`, inline: true },
-        { name: '👥 Outlived', value: `${modeStats.playersOutlived || 0}`, inline: true },
-        { name: '⭐ Score', value: `${(modeStats.score || 0).toLocaleString()}`, inline: true },
-        { name: '⏱️ Temps', value: formatPlaytime(modeStats.minutesPlayed || 0), inline: true },
-      );
-    } else {
-      // Stats globales
-      embed.setDescription(`**Stats globales (tous modes)** | ${periodText}`);
-      embed.addFields(
-        { name: '🏆 Victoires', value: `${stats.overall.wins}`, inline: true },
-        { name: '💀 Kills', value: `${stats.overall.kills}`, inline: true },
-        { name: '🎮 Parties', value: `${stats.overall.matches}`, inline: true },
-        { name: '📈 K/D', value: `${stats.overall.kd}`, inline: true },
-        { name: '🎯 Win Rate', value: `${stats.overall.winRate}%`, inline: true },
-        { name: '👥 Outlived', value: `${(stats.overall.playersOutlived || 0).toLocaleString()}`, inline: true },
-        { name: '⭐ Score', value: `${(stats.overall.score || 0).toLocaleString()}`, inline: true },
-        { name: '⏱️ Temps joué', value: formatPlaytime(stats.overall.minutesPlayed), inline: true },
-      );
-
-      // Top 3 modes avec le plus de parties (exclure les modes non-compétitifs)
-      const excludedModes = ['playgroundv2', 'playground', 'creative'];
-      const topModes = Object.entries(stats.modes)
-        .filter(([name, m]) => m.matches > 0 && !excludedModes.some(ex => name.toLowerCase().includes(ex)))
-        .sort((a, b) => b[1].matches - a[1].matches)
-        .slice(0, 3);
-
-      if (topModes.length > 0) {
-        const modesText = topModes.map(([name, m]) =>
-          `**${name}**: ${m.wins}W / ${m.kills}K / ${m.matches} parties`
-        ).join('\n');
-        embed.addFields({ name: '📋 Top Modes', value: modesText, inline: false });
-      }
+    if (!modeStats || modeStats.matches === 0) {
+      const periodMsg = seasonOnly ? ` cette saison (${SEASONS.current.shortName})` : '';
+      return interaction.editReply({
+        content: `❌ **${player.displayName}** n'a pas de stats en **${modeConfig.name}**${periodMsg}.`,
+      });
     }
 
-    embed.setFooter({ text: seasonOnly ? `Stats ${SEASONS.current.name}` : 'Stats via Epic Games API' });
-    embed.setTimestamp();
+    // Période
+    const period = seasonOnly ? SEASONS.current.shortName : 'Lifetime';
 
-    await interaction.editReply({ embeds: [embed] });
+    // Générer l'image
+    const imageBuffer = await renderStatsCard({
+      playerName: player.displayName,
+      modeName: modeConfig.name,
+      stats: modeStats,
+      period,
+    });
+
+    // Créer l'attachment
+    const attachment = new AttachmentBuilder(imageBuffer, {
+      name: `stats-${player.displayName.replace(/[^a-zA-Z0-9]/g, '')}-${mode}.png`,
+    });
+
+    await interaction.editReply({ files: [attachment] });
 
   } catch (e) {
     console.error('Erreur stats:', e);
