@@ -1,6 +1,13 @@
 // src/services/epicStats.js
 import { getEpicClient, isEpicReady } from './epicAuth.js';
 
+// Plateformes externes supportées
+const EXTERNAL_PLATFORMS = {
+  psn: 'psn',       // PlayStation Network
+  xbl: 'xbl',       // Xbox Live
+  nintendo: 'nintendo', // Nintendo Switch
+};
+
 // Mapping des modes de jeu - patterns pour matcher les playlists Epic
 export const GAME_MODES = {
   // Battle Royale standard
@@ -36,8 +43,9 @@ const STAT_KEYS = [
 ];
 
 /**
- * Recherche un joueur par son pseudo Epic
- * @param {string} displayName - Pseudo Epic Games
+ * Recherche un joueur par son pseudo Epic ou plateforme externe
+ * Essaie dans l'ordre: Epic > PSN > Xbox > Nintendo
+ * @param {string} displayName - Pseudo Epic Games ou console
  * @returns {Promise<Object|null>} - Compte trouvé ou null
  */
 export async function findPlayer(displayName) {
@@ -47,8 +55,8 @@ export async function findPlayer(displayName) {
 
   const client = getEpicClient();
 
+  // 1. Essayer d'abord la recherche Epic directe
   try {
-    // Recherche via UserManager de fnbr.js
     const user = await client.user.fetch(displayName);
 
     if (user) {
@@ -57,14 +65,35 @@ export async function findPlayer(displayName) {
         displayName: user.displayName,
       };
     }
-    return null;
   } catch (e) {
-    // UserNotFoundError ou autre erreur
-    if (e.name === 'UserNotFoundError' || e.message?.includes('not found')) {
-      return null;
+    // UserNotFoundError - continuer avec les plateformes externes
+    if (e.name !== 'UserNotFoundError' && !e.message?.includes('not found')) {
+      throw e;
     }
-    throw e;
   }
+
+  // 2. Essayer les plateformes externes (PSN, Xbox, Nintendo)
+  for (const platform of Object.keys(EXTERNAL_PLATFORMS)) {
+    try {
+      const response = await client.http.epicgamesRequest({
+        method: 'GET',
+        url: `https://account-public-service-prod.ol.epicgames.com/account/api/public/account/lookup/externalAuth/${platform}/displayName/${encodeURIComponent(displayName)}`,
+      }, 'fortnite');
+
+      if (response && response.id) {
+        return {
+          id: response.id,
+          displayName: response.displayName || displayName,
+          platform: platform,
+          externalDisplayName: displayName,
+        };
+      }
+    } catch {
+      // Continuer avec la plateforme suivante
+    }
+  }
+
+  return null;
 }
 
 /**
@@ -91,6 +120,49 @@ export async function findPlayerById(accountId) {
     }
     return null;
   } catch {
+    return null;
+  }
+}
+
+/**
+ * Recherche un joueur par son pseudo sur une plateforme externe (PSN, Xbox, Nintendo)
+ * @param {string} displayName - Pseudo sur la plateforme
+ * @param {string} platform - Plateforme (psn, xbl, nintendo)
+ * @returns {Promise<Object|null>}
+ */
+export async function findPlayerByExternalPlatform(displayName, platform) {
+  if (!isEpicReady()) {
+    throw new Error('Client Epic non connecté');
+  }
+
+  if (!EXTERNAL_PLATFORMS[platform]) {
+    return null;
+  }
+
+  const client = getEpicClient();
+
+  try {
+    // Appel direct à l'API Epic Games pour lookup externe
+    const response = await client.http.epicgamesRequest({
+      method: 'GET',
+      url: `https://account-public-service-prod.ol.epicgames.com/account/api/public/account/lookup/externalAuth/${platform}/displayName/${encodeURIComponent(displayName)}`,
+    }, 'fortnite');
+
+    if (response && response.id) {
+      return {
+        id: response.id,
+        displayName: response.displayName || displayName,
+        platform: platform,
+        externalDisplayName: displayName,
+      };
+    }
+    return null;
+  } catch (e) {
+    // 404 = compte non trouvé
+    if (e.code === 404 || e.message?.includes('not found')) {
+      return null;
+    }
+    // Ignorer les erreurs silencieusement pour les recherches
     return null;
   }
 }

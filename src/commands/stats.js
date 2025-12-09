@@ -77,10 +77,20 @@ export async function execute(interaction) {
     }
 
     // Construire l'embed
+    const platformEmojis = { psn: '🎮', xbl: '🎮', nintendo: '🕹️' };
+    const platformNames = { psn: 'PlayStation', xbl: 'Xbox', nintendo: 'Nintendo' };
+
     const embed = new EmbedBuilder()
       .setTitle(`📊 Stats de ${player.displayName}`)
       .setColor(0x9d5bd2)
       .setThumbnail(interaction.user.displayAvatarURL({ size: 128 }));
+
+    // Afficher la plateforme si trouvé via console
+    if (player.platform) {
+      embed.setAuthor({
+        name: `${platformEmojis[player.platform]} ${platformNames[player.platform]} • ${player.externalDisplayName}`
+      });
+    }
 
     if (mode && GAME_MODES[mode]) {
       // Stats d'un mode spécifique
