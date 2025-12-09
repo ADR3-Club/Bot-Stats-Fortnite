@@ -1,0 +1,23 @@
+# Dependencies
+node_modules/
+
+# Environment
+.env
+
+# Database
+data/*.db
+data/*.db-journal
+
+# Logs
+logs/*.log
+
+# Device Auth (sensitive)
+device_auth.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/

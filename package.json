@@ -1,0 +1,22 @@
+{
+  "name": "bot-stats-fortnite",
+  "version": "1.0.0",
+  "description": "Bot Discord pour tracker les stats Fortnite (Reload, Blitz, Zero Build, Frénésie)",
+  "main": "bot.js",
+  "type": "module",
+  "scripts": {
+    "start": "node bot.js",
+    "setup": "node setup-auth.js"
+  },
+  "keywords": ["fortnite", "discord", "bot", "stats", "tracker"],
+  "author": "ADR3 Club",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.6.0",
+    "better-sqlite3": "^9.2.2",
+    "discord.js": "^14.14.1",
+    "dotenv": "^16.3.1",
+    "fnbr": "^8.3.0",
+    "luxon": "^3.5.0"
+  }
+}
