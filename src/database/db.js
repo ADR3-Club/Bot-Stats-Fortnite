@@ -25,6 +25,7 @@ export function initDb() {
       discord_id TEXT PRIMARY KEY,
       epic_account_id TEXT NOT NULL,
       epic_display_name TEXT NOT NULL,
+      platform TEXT,
       linked_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 
@@ -39,6 +40,13 @@ export function initDb() {
     CREATE INDEX IF NOT EXISTS idx_linked_epic ON linked_accounts(epic_account_id);
     CREATE INDEX IF NOT EXISTS idx_cache_time ON stats_cache(cached_at);
   `);
+
+  // Migration: ajouter colonne platform si elle n'existe pas
+  try {
+    db.exec(`ALTER TABLE linked_accounts ADD COLUMN platform TEXT`);
+  } catch {
+    // Colonne existe déjà
+  }
 
   return db;
 }
@@ -55,17 +63,22 @@ export function getDb() {
 
 /**
  * Lie un compte Epic à un utilisateur Discord
+ * @param {string} discordId - ID Discord
+ * @param {string} epicAccountId - ID Epic
+ * @param {string} epicDisplayName - Pseudo Epic
+ * @param {string|null} platform - Plateforme (psn, xbl, null pour Epic/PC)
  */
-export function linkAccount(discordId, epicAccountId, epicDisplayName) {
+export function linkAccount(discordId, epicAccountId, epicDisplayName, platform = null) {
   const db = getDb();
   db.prepare(`
-    INSERT INTO linked_accounts (discord_id, epic_account_id, epic_display_name)
-    VALUES (?, ?, ?)
+    INSERT INTO linked_accounts (discord_id, epic_account_id, epic_display_name, platform)
+    VALUES (?, ?, ?, ?)
     ON CONFLICT(discord_id) DO UPDATE SET
       epic_account_id = excluded.epic_account_id,
       epic_display_name = excluded.epic_display_name,
+      platform = excluded.platform,
       linked_at = CURRENT_TIMESTAMP
-  `).run(discordId, epicAccountId, epicDisplayName);
+  `).run(discordId, epicAccountId, epicDisplayName, platform);
 }
 
 /**
@@ -74,7 +87,7 @@ export function linkAccount(discordId, epicAccountId, epicDisplayName) {
 export function getLinkedAccount(discordId) {
   const db = getDb();
   return db.prepare(`
-    SELECT epic_account_id, epic_display_name, linked_at
+    SELECT epic_account_id, epic_display_name, platform, linked_at
     FROM linked_accounts
     WHERE discord_id = ?
   `).get(discordId);

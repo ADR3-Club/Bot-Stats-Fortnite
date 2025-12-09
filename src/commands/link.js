@@ -42,9 +42,10 @@ export async function execute(interaction) {
         });
       }
 
-      // Lier le compte
-      linkAccount(interaction.user.id, player.id, player.displayName);
+      // Lier le compte (avec plateforme si trouvé via PSN/Xbox)
+      linkAccount(interaction.user.id, player.id, player.displayName, player.platform || null);
 
+      const platformNames = { psn: 'PlayStation', xbl: 'Xbox' };
       const embed = new EmbedBuilder()
         .setTitle('✅ Compte lié')
         .setDescription(`Ton compte Discord est maintenant lié à **${player.displayName}**`)
@@ -54,6 +55,15 @@ export async function execute(interaction) {
           { name: 'ID Epic', value: player.id, inline: true },
         )
         .setFooter({ text: 'Utilise /me pour voir tes stats' });
+
+      // Afficher la plateforme si détectée
+      if (player.platform) {
+        embed.spliceFields(0, 0, {
+          name: 'Plateforme',
+          value: `🎮 ${platformNames[player.platform] || player.platform}`,
+          inline: true,
+        });
+      }
 
       await interaction.editReply({ embeds: [embed] });
 
@@ -92,6 +102,7 @@ export async function execute(interaction) {
       });
     }
 
+    const platformNames = { psn: 'PlayStation', xbl: 'Xbox' };
     const embed = new EmbedBuilder()
       .setTitle('🔗 Compte lié')
       .setColor(0x2391ec)
@@ -99,6 +110,15 @@ export async function execute(interaction) {
         { name: 'Pseudo Epic', value: linked.epic_display_name, inline: true },
         { name: 'Lié le', value: new Date(linked.linked_at).toLocaleDateString('fr-FR'), inline: true },
       );
+
+    // Afficher la plateforme si connue
+    if (linked.platform) {
+      embed.spliceFields(1, 0, {
+        name: 'Plateforme',
+        value: `🎮 ${platformNames[linked.platform] || linked.platform}`,
+        inline: true,
+      });
+    }
 
     await interaction.reply({
       embeds: [embed],

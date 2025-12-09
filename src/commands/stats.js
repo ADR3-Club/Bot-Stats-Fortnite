@@ -49,6 +49,7 @@ export async function execute(interaction) {
       player = {
         id: linked.epic_account_id,
         displayName: linked.epic_display_name,
+        platform: linked.platform,
       };
     }
 

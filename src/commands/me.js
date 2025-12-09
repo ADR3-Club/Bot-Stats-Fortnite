@@ -54,10 +54,20 @@ export async function execute(interaction) {
     }
 
     // Construire l'embed
+    const platformEmojis = { psn: '🎮', xbl: '🎮' };
+    const platformNames = { psn: 'PlayStation', xbl: 'Xbox' };
+
     const embed = new EmbedBuilder()
       .setTitle(`📊 Tes stats - ${linked.epic_display_name}`)
       .setColor(0x9d5bd2)
       .setThumbnail(interaction.user.displayAvatarURL());
+
+    // Afficher la plateforme si connue
+    if (linked.platform) {
+      embed.setAuthor({
+        name: `${platformEmojis[linked.platform] || '🎮'} ${platformNames[linked.platform] || linked.platform}`,
+      });
+    }
 
     if (mode && GAME_MODES[mode]) {
       // Stats d'un mode spécifique
@@ -89,9 +99,10 @@ export async function execute(interaction) {
         { name: '⏱️ Temps joué', value: formatPlaytime(stats.overall.minutesPlayed), inline: true },
       );
 
-      // Modes favoris (top 3)
+      // Modes favoris (top 3, exclure les modes non-compétitifs)
+      const excludedModes = ['playgroundv2', 'playground', 'creative'];
       const topModes = Object.entries(stats.modes)
-        .filter(([, m]) => m.matches > 0)
+        .filter(([name, m]) => m.matches > 0 && !excludedModes.some(ex => name.toLowerCase().includes(ex)))
         .sort((a, b) => b[1].matches - a[1].matches)
         .slice(0, 3);
 
