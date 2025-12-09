@@ -1,27 +1,13 @@
 // src/commands/me.js
 import { SlashCommandBuilder, EmbedBuilder, MessageFlags } from 'discord.js';
-import { getPlayerStats, getAvailableModes, GAME_MODES, SEASONS, formatPlaytime } from '../services/epicStats.js';
+import { getPlayerStats, formatPlaytime } from '../services/epicStats.js';
 import { getLinkedAccount, getCachedStats, cacheStats } from '../database/db.js';
 
 export const data = new SlashCommandBuilder()
   .setName('me')
-  .setDescription('Affiche tes stats Fortnite (compte lié)')
-  .addStringOption(o => o
-    .setName('mode')
-    .setDescription('Mode de jeu spécifique')
-    .setRequired(false)
-    .addChoices(...getAvailableModes())
-  )
-  .addBooleanOption(o => o
-    .setName('saison')
-    .setDescription('Stats de la saison actuelle uniquement')
-    .setRequired(false)
-  );
+  .setDescription('Affiche tes stats Fortnite globales (compte lié)');
 
 export async function execute(interaction) {
-  const mode = interaction.options.getString('mode');
-  const seasonOnly = interaction.options.getBoolean('saison') || false;
-
   // Vérifier si l'utilisateur a un compte lié
   const linked = getLinkedAccount(interaction.user.id);
 
@@ -35,17 +21,14 @@ export async function execute(interaction) {
   await interaction.deferReply();
 
   try {
-    // Options pour le filtrage par saison
-    const statsOptions = seasonOnly ? { startTime: SEASONS.current.startTime } : {};
-
-    // Vérifier le cache (seulement pour stats lifetime)
-    let stats = seasonOnly ? null : getCachedStats(linked.epic_account_id);
+    // Vérifier le cache
+    let stats = getCachedStats(linked.epic_account_id);
 
     if (!stats) {
       // Récupérer les stats depuis l'API
-      stats = await getPlayerStats(linked.epic_account_id, statsOptions);
+      stats = await getPlayerStats(linked.epic_account_id);
 
-      if (stats && !stats.private && !seasonOnly) {
+      if (stats && !stats.private) {
         cacheStats(linked.epic_account_id, stats);
       }
     }
@@ -84,56 +67,32 @@ export async function execute(interaction) {
       });
     }
 
-    // Texte pour la période
-    const periodText = seasonOnly ? `📅 ${SEASONS.current.shortName}` : '🌐 Lifetime';
+    // Stats globales
+    embed.setDescription('**Stats globales (tous modes)**');
+    embed.addFields(
+      { name: '🏆 Victoires', value: `${stats.overall.wins}`, inline: true },
+      { name: '💀 Kills', value: `${stats.overall.kills}`, inline: true },
+      { name: '🎮 Parties', value: `${stats.overall.matches}`, inline: true },
+      { name: '📈 K/D', value: `${stats.overall.kd}`, inline: true },
+      { name: '🎯 Win Rate', value: `${stats.overall.winRate}%`, inline: true },
+      { name: '⏱️ Temps joué', value: formatPlaytime(stats.overall.minutesPlayed), inline: true },
+    );
 
-    if (mode && GAME_MODES[mode]) {
-      // Stats d'un mode spécifique
-      const modeStats = stats.modes[GAME_MODES[mode].name];
+    // Modes favoris (top 3, exclure les modes non-compétitifs)
+    const excludedModes = ['playgroundv2', 'playground', 'creative'];
+    const topModes = Object.entries(stats.modes)
+      .filter(([name, m]) => m.matches > 0 && !excludedModes.some(ex => name.toLowerCase().includes(ex)))
+      .sort((a, b) => b[1].matches - a[1].matches)
+      .slice(0, 3);
 
-      if (!modeStats || modeStats.matches === 0) {
-        const periodMsg = seasonOnly ? ` cette saison (${SEASONS.current.shortName})` : '';
-        return interaction.editReply({
-          content: `❌ Tu n'as pas de stats en **${GAME_MODES[mode].name}**${periodMsg}.`,
-        });
-      }
-
-      embed.setDescription(`**Mode:** ${GAME_MODES[mode].name} | ${periodText}`);
-      embed.addFields(
-        { name: '🏆 Victoires', value: `${modeStats.wins}`, inline: true },
-        { name: '💀 Kills', value: `${modeStats.kills}`, inline: true },
-        { name: '🎮 Parties', value: `${modeStats.matches}`, inline: true },
-        { name: '📈 K/D', value: `${modeStats.kd}`, inline: true },
-        { name: '🎯 Win Rate', value: `${modeStats.winRate}%`, inline: true },
-      );
-    } else {
-      // Stats globales
-      embed.setDescription(`**Stats globales (tous modes)** | ${periodText}`);
-      embed.addFields(
-        { name: '🏆 Victoires', value: `${stats.overall.wins}`, inline: true },
-        { name: '💀 Kills', value: `${stats.overall.kills}`, inline: true },
-        { name: '🎮 Parties', value: `${stats.overall.matches}`, inline: true },
-        { name: '📈 K/D', value: `${stats.overall.kd}`, inline: true },
-        { name: '🎯 Win Rate', value: `${stats.overall.winRate}%`, inline: true },
-        { name: '⏱️ Temps joué', value: formatPlaytime(stats.overall.minutesPlayed), inline: true },
-      );
-
-      // Modes favoris (top 3, exclure les modes non-compétitifs)
-      const excludedModes = ['playgroundv2', 'playground', 'creative'];
-      const topModes = Object.entries(stats.modes)
-        .filter(([name, m]) => m.matches > 0 && !excludedModes.some(ex => name.toLowerCase().includes(ex)))
-        .sort((a, b) => b[1].matches - a[1].matches)
-        .slice(0, 3);
-
-      if (topModes.length > 0) {
-        const modesText = topModes.map(([name, m]) =>
-          `**${name}**: ${m.wins}W / ${m.kills}K (${m.winRate}%)`
-        ).join('\n');
-        embed.addFields({ name: '🎮 Tes modes favoris', value: modesText, inline: false });
-      }
+    if (topModes.length > 0) {
+      const modesText = topModes.map(([name, m]) =>
+        `**${name}**: ${m.wins}W / ${m.kills}K (${m.winRate}%)`
+      ).join('\n');
+      embed.addFields({ name: '🎮 Tes modes favoris', value: modesText, inline: false });
     }
 
-    embed.setFooter({ text: seasonOnly ? `Stats ${SEASONS.current.name}` : 'Stats mises à jour toutes les 5 minutes' });
+    embed.setFooter({ text: 'Utilise /stats pour plus d\'options' });
     embed.setTimestamp();
 
     await interaction.editReply({ embeds: [embed] });
