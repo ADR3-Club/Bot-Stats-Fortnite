@@ -31,17 +31,29 @@ if (existsSync('device_auth.json')) {
 }
 
 console.log();
-console.log('fnbr.js va te demander un code d\'autorisation.');
-console.log('Un lien va s\'afficher, ouvre-le et connecte-toi.');
+console.log('1. Ouvre ce lien dans ton navigateur (sur ton PC) :');
 console.log();
+console.log('   https://www.epicgames.com/id/api/redirect?clientId=3f69e56c7649492c8cc29f1af08a8a12&responseType=code');
+console.log();
+console.log('2. Connecte-toi avec le compte Epic du bot');
+console.log('3. Copie le "authorizationCode" de la réponse JSON');
+console.log();
+
+const authCode = await question('Code d\'autorisation: ');
+
+if (!authCode || authCode.length < 10) {
+  console.error('Code invalide.');
+  rl.close();
+  process.exit(1);
+}
+
+console.log();
+console.log('Authentification en cours...');
 
 try {
   const client = new Client({
     auth: {
-      authorizationCode: async () => {
-        const code = await Client.consoleQuestion('Entrez le code d\'autorisation: ');
-        return code;
-      },
+      authorizationCode: authCode.trim(),
     },
   });
 
