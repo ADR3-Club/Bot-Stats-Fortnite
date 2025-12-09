@@ -20,10 +20,13 @@ export const GAME_MODES = {
   duo: { name: 'Duo', patterns: ['defaultduo', 'brduo'] },
   squad: { name: 'Squad', patterns: ['defaultsquad', 'brsquad', 'defaultsquads'] },
 
-  // Zero Build
+  // Zero Build (modes individuels)
   zb_solo: { name: 'Zero Build Solo', patterns: ['nobuildbr_solo', 'nobuildbrsolo'] },
   zb_duo: { name: 'Zero Build Duo', patterns: ['nobuildbr_duo', 'nobuildbrduo'] },
   zb_squad: { name: 'Zero Build Squad', patterns: ['nobuildbr_squad', 'nobuildbrsquad'] },
+
+  // Zero Build agrégé (Solo + Duo + Squad, hors Reload)
+  zero_build: { name: 'Zero Build', patterns: [], aggregate: ['Zero Build Solo', 'Zero Build Duo', 'Zero Build Squad'] },
 
   // Reload (différents noms internes: punchberry, tigerranch, piperboot, etc.)
   reload: { name: 'Reload', patterns: ['punchberry', 'tigerranch', 'piperboot', 'figment', 'respawn'] },
@@ -236,6 +239,43 @@ function formatStats(rawStats) {
   result.overall.winRate = result.overall.matches > 0
     ? ((result.overall.wins / result.overall.matches) * 100).toFixed(1)
     : '0';
+
+  // Créer les modes agrégés
+  for (const [, modeConfig] of Object.entries(GAME_MODES)) {
+    if (!modeConfig.aggregate) continue;
+
+    const aggregated = {
+      wins: 0,
+      kills: 0,
+      matches: 0,
+      minutesPlayed: 0,
+      playersOutlived: 0,
+      score: 0,
+    };
+
+    // Agréger les stats des modes sources
+    for (const sourceName of modeConfig.aggregate) {
+      const sourceStats = result.modes[sourceName];
+      if (sourceStats) {
+        aggregated.wins += sourceStats.wins;
+        aggregated.kills += sourceStats.kills;
+        aggregated.matches += sourceStats.matches;
+        aggregated.minutesPlayed += sourceStats.minutesPlayed;
+        aggregated.playersOutlived += sourceStats.playersOutlived || 0;
+        aggregated.score += sourceStats.score || 0;
+      }
+    }
+
+    // Calculer K/D et Win Rate si le mode a des parties
+    if (aggregated.matches > 0) {
+      const deaths = aggregated.matches - aggregated.wins;
+      result.modes[modeConfig.name] = {
+        ...aggregated,
+        kd: deaths > 0 ? (aggregated.kills / deaths).toFixed(2) : aggregated.kills.toString(),
+        winRate: ((aggregated.wins / aggregated.matches) * 100).toFixed(1),
+      };
+    }
+  }
 
   return result;
 }
