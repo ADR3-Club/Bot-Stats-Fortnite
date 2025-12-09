@@ -10,11 +10,17 @@ export const SEASONS = {
   c6s1: {
     name: 'Chapitre 6 Saison 1',
     shortName: 'C6S1',
-    startDate: new Date('2024-12-01T07:00:00Z'),  // 1er décembre 2024 à 8h CET
+    startDate: new Date('2024-12-01T07:00:00Z'),
+    get startTime() { return Math.floor(this.startDate.getTime() / 1000); },
+  },
+  c7s1: {
+    name: 'Chapitre 7 Saison 1',
+    shortName: 'C7S1',
+    startDate: new Date('2025-11-30T07:00:00Z'),  // 30 novembre 2025 à 8h CET (après event Zero Hour)
     get startTime() { return Math.floor(this.startDate.getTime() / 1000); },
   },
   // Saison actuelle (alias)
-  get current() { return this.c6s1; },
+  get current() { return this.c7s1; },
 };
 
 // Headers pour fortnite-api.com (avec clé API si disponible)
