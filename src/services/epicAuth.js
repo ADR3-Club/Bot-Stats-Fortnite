@@ -1,5 +1,6 @@
 // src/services/epicAuth.js
-import { Client } from 'fnbr';
+import fnbr from 'fnbr';
+const { Client } = fnbr;
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 
 let epicClient = null;

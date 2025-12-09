@@ -1,5 +1,6 @@
 // setup-auth.js - Génère les credentials Epic Games Device Auth
-import { Client } from 'fnbr';
+import fnbr from 'fnbr';
+const { Client } = fnbr;
 import { writeFileSync, existsSync } from 'node:fs';
 import { createInterface } from 'node:readline';
 
