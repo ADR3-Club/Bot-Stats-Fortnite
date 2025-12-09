@@ -1,26 +1,28 @@
 // src/services/epicStats.js
 import { getEpicClient, isEpicReady } from './epicAuth.js';
 
-// Mapping des modes de jeu
+// Mapping des modes de jeu - patterns pour matcher les playlists Epic
 export const GAME_MODES = {
   // Battle Royale standard
-  solo: { name: 'Solo', playlist: 'defaultsolo' },
-  duo: { name: 'Duo', playlist: 'defaultduo' },
-  squad: { name: 'Squad', playlist: 'defaultsquad' },
+  solo: { name: 'Solo', patterns: ['defaultsolo', 'brsolo'] },
+  duo: { name: 'Duo', patterns: ['defaultduo', 'brduo'] },
+  squad: { name: 'Squad', patterns: ['defaultsquad', 'brsquad', 'defaultsquads'] },
 
   // Zero Build
-  zb_solo: { name: 'Zero Build Solo', playlist: 'nobuildbr_solo' },
-  zb_duo: { name: 'Zero Build Duo', playlist: 'nobuildbr_duo' },
-  zb_squad: { name: 'Zero Build Squad', playlist: 'nobuildbr_squad' },
+  zb_solo: { name: 'Zero Build Solo', patterns: ['nobuildbr_solo', 'nobuildbrsolo'] },
+  zb_duo: { name: 'Zero Build Duo', patterns: ['nobuildbr_duo', 'nobuildbrduo'] },
+  zb_squad: { name: 'Zero Build Squad', patterns: ['nobuildbr_squad', 'nobuildbrsquad'] },
 
-  // Reload
-  reload: { name: 'Reload', playlist: 'respawn' },
-  reload_zb: { name: 'Reload Zero Build', playlist: 'respawn_nobuild' },
+  // Reload (différents noms internes: punchberry, tigerranch, piperboot, etc.)
+  reload: { name: 'Reload', patterns: ['punchberry', 'tigerranch', 'piperboot', 'figment', 'respawn'] },
+  reload_zb: { name: 'Reload Zero Build', patterns: ['punchberrynobuild', 'tigerranchnobuild', 'piperbootnobuild', 'figmentnobuild', 'respawn_nobuild'] },
+
+  // Ranked (habanero = ranked)
+  ranked_br: { name: 'Ranked BR', patterns: ['habanero_solo', 'habanero_duo', 'habanero_squad', 'showdown'] },
+  ranked_zb: { name: 'Ranked Zero Build', patterns: ['nobuildbr_habanero', 'showdown_nobuild'] },
 
   // Autres modes
-  blitz: { name: 'Blitz', playlist: 'blitz' },
-  ranked_br: { name: 'Ranked BR', playlist: 'showdown' },
-  ranked_zb: { name: 'Ranked Zero Build', playlist: 'showdown_nobuild' },
+  blitz: { name: 'Blitz', patterns: ['blitz'] },
 };
 
 // Stats à récupérer
@@ -123,7 +125,22 @@ export async function getPlayerStats(accountId) {
 }
 
 /**
+ * Trouve le mode correspondant à une playlist
+ */
+function findModeForPlaylist(playlist) {
+  for (const [modeKey, mode] of Object.entries(GAME_MODES)) {
+    for (const pattern of mode.patterns) {
+      if (playlist.includes(pattern)) {
+        return { key: modeKey, name: mode.name };
+      }
+    }
+  }
+  return null;
+}
+
+/**
  * Formate les stats brutes en objet lisible
+ * Format Epic: { data: { stats: { "br_kills_keyboardmouse_m0_playlist_xxx": value } } }
  */
 function formatStats(rawStats) {
   const result = {
@@ -136,62 +153,73 @@ function formatStats(rawStats) {
       minutesPlayed: 0,
     },
     modes: {},
-    inputTypes: ['keyboardmouse', 'gamepad', 'touch'],
   };
 
-  // Parser les stats par input type et mode
-  for (const inputType of result.inputTypes) {
-    const inputStats = rawStats[inputType];
-    if (!inputStats) continue;
+  // Vérifier la structure
+  const stats = rawStats?.data?.stats || rawStats?.stats || rawStats;
+  if (!stats || typeof stats !== 'object') {
+    return result;
+  }
 
-    for (const [playlist, data] of Object.entries(inputStats)) {
-      // Trouver le mode correspondant
-      const modeKey = Object.keys(GAME_MODES).find(
-        k => GAME_MODES[k].playlist === playlist.replace('playlist_', '')
-      );
+  // Parser les stats - format: br_{stat}_{input}_m0_playlist_{playlist}
+  const playlistStats = {};
 
-      const modeName = modeKey ? GAME_MODES[modeKey].name : playlist;
+  for (const [key, value] of Object.entries(stats)) {
+    // Extraire les infos de la clé
+    const match = key.match(/^br_(\w+)_(?:keyboardmouse|gamepad|touch)_m0_playlist_(.+)$/);
+    if (!match) continue;
 
-      if (!result.modes[modeName]) {
-        result.modes[modeName] = {
-          wins: 0,
-          kills: 0,
-          matches: 0,
-          kd: 0,
-          winRate: 0,
-        };
-      }
+    const [, statType, playlist] = match;
 
-      // Accumuler les stats
-      const wins = data.placetop1 || 0;
-      const kills = data.kills || 0;
-      const matches = data.matchesplayed || 0;
+    // Trouver le mode
+    const mode = findModeForPlaylist(playlist);
+    const modeName = mode ? mode.name : playlist;
 
-      result.modes[modeName].wins += wins;
-      result.modes[modeName].kills += kills;
-      result.modes[modeName].matches += matches;
+    if (!playlistStats[modeName]) {
+      playlistStats[modeName] = {
+        wins: 0,
+        kills: 0,
+        matches: 0,
+        minutesPlayed: 0,
+      };
+    }
 
-      result.overall.wins += wins;
-      result.overall.kills += kills;
-      result.overall.matches += matches;
-      result.overall.minutesPlayed += data.minutesplayed || 0;
+    // Accumuler selon le type de stat
+    if (statType === 'placetop1') {
+      playlistStats[modeName].wins += value;
+      result.overall.wins += value;
+    } else if (statType === 'kills') {
+      playlistStats[modeName].kills += value;
+      result.overall.kills += value;
+    } else if (statType === 'matchesplayed') {
+      playlistStats[modeName].matches += value;
+      result.overall.matches += value;
+    } else if (statType === 'minutesplayed') {
+      playlistStats[modeName].minutesPlayed += value;
+      result.overall.minutesPlayed += value;
     }
   }
 
-  // Calculer K/D et Win Rate
-  const deaths = result.overall.matches - result.overall.wins;
-  result.overall.kd = deaths > 0 ? (result.overall.kills / deaths).toFixed(2) : result.overall.kills;
+  // Calculer K/D et Win Rate pour chaque mode
+  for (const [modeName, modeStats] of Object.entries(playlistStats)) {
+    const deaths = modeStats.matches - modeStats.wins;
+    result.modes[modeName] = {
+      wins: modeStats.wins,
+      kills: modeStats.kills,
+      matches: modeStats.matches,
+      kd: deaths > 0 ? (modeStats.kills / deaths).toFixed(2) : modeStats.kills.toString(),
+      winRate: modeStats.matches > 0
+        ? ((modeStats.wins / modeStats.matches) * 100).toFixed(1)
+        : '0',
+    };
+  }
+
+  // Calculer K/D et Win Rate global
+  const totalDeaths = result.overall.matches - result.overall.wins;
+  result.overall.kd = totalDeaths > 0 ? (result.overall.kills / totalDeaths).toFixed(2) : result.overall.kills.toString();
   result.overall.winRate = result.overall.matches > 0
     ? ((result.overall.wins / result.overall.matches) * 100).toFixed(1)
-    : 0;
-
-  for (const mode of Object.values(result.modes)) {
-    const modeDeaths = mode.matches - mode.wins;
-    mode.kd = modeDeaths > 0 ? (mode.kills / modeDeaths).toFixed(2) : mode.kills;
-    mode.winRate = mode.matches > 0
-      ? ((mode.wins / mode.matches) * 100).toFixed(1)
-      : 0;
-  }
+    : '0';
 
   return result;
 }
