@@ -107,12 +107,13 @@ export async function execute(interaction) {
     // Période
     const period = seasonOnly ? SEASONS.current.shortName : 'Lifetime';
 
-    // Générer l'image
+    // Générer l'image avec l'avatar Discord de l'utilisateur
     const imageBuffer = await renderStatsCard({
       playerName: player.displayName,
       modeName: modeConfig.name,
       stats: modeStats,
       period,
+      avatarUrl: interaction.user.displayAvatarURL({ extension: 'png', size: 256 }),
     });
 
     // Créer l'attachment

@@ -1,5 +1,5 @@
 // src/lib/renderStats.js
-import { createCanvas, registerFont } from 'canvas';
+import { createCanvas, registerFont, loadImage } from 'canvas';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -33,9 +33,10 @@ const STAT_BARS = [
  * @param {string} options.modeName - Nom du mode (Reload, Zero Build, Blitz)
  * @param {Object} options.stats - Stats du mode
  * @param {string} options.period - Période (Lifetime, C7S1, etc.)
+ * @param {string} options.avatarUrl - URL de l'avatar Discord
  * @returns {Promise<Buffer>} - Image PNG
  */
-export async function renderStatsCard({ playerName, modeName, stats, period = 'Lifetime' }) {
+export async function renderStatsCard({ playerName, modeName, stats, period = 'Lifetime', avatarUrl }) {
   const canvas = createCanvas(CARD_WIDTH, CARD_HEIGHT);
   const ctx = canvas.getContext('2d');
 
@@ -66,57 +67,77 @@ export async function renderStatsCard({ playerName, modeName, stats, period = 'L
   ctx.closePath();
   ctx.fill();
 
-  // Petites formes décoratives
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
-  ctx.beginPath();
-  ctx.moveTo(CARD_WIDTH - 80, CARD_HEIGHT - 100);
-  ctx.lineTo(CARD_WIDTH - 30, CARD_HEIGHT - 150);
-  ctx.lineTo(CARD_WIDTH - 30, CARD_HEIGHT - 100);
-  ctx.closePath();
-  ctx.fill();
+  // === AVATAR DISCORD (cercle en haut à droite) ===
+  if (avatarUrl) {
+    try {
+      const avatar = await loadImage(avatarUrl);
+      const avatarSize = 180;
+      const avatarX = CARD_WIDTH - avatarSize - 30;
+      const avatarY = 25;
+
+      // Cercle de fond (bordure)
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(avatarX + avatarSize / 2, avatarY + avatarSize / 2, avatarSize / 2 + 4, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+      ctx.fill();
+      ctx.restore();
+
+      // Masque circulaire pour l'avatar
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(avatarX + avatarSize / 2, avatarY + avatarSize / 2, avatarSize / 2, 0, Math.PI * 2);
+      ctx.closePath();
+      ctx.clip();
+      ctx.drawImage(avatar, avatarX, avatarY, avatarSize, avatarSize);
+      ctx.restore();
+    } catch (e) {
+      // Ignorer si l'avatar ne charge pas
+    }
+  }
 
   // === NOM DU MODE (Style fortnite.gg - Jaune/Orange italique) ===
   ctx.save();
-  ctx.font = 'italic bold 48px Burbank, Arial Black, sans-serif';
+  ctx.font = 'italic bold 52px Burbank, Arial Black, sans-serif';
 
   // Dégradé jaune/orange pour le mode
-  const modeGradient = ctx.createLinearGradient(25, 15, 300, 60);
+  const modeGradient = ctx.createLinearGradient(25, 15, 350, 60);
   modeGradient.addColorStop(0, '#ffd700');  // Or
   modeGradient.addColorStop(0.5, '#ffb800');  // Orange doré
   modeGradient.addColorStop(1, '#ff9500');  // Orange
   ctx.fillStyle = modeGradient;
 
-  // Ombre portée
-  ctx.shadowColor = 'rgba(0, 0, 0, 0.6)';
-  ctx.shadowBlur = 6;
-  ctx.shadowOffsetX = 3;
-  ctx.shadowOffsetY = 3;
-  ctx.fillText(modeName.toUpperCase(), 25, 55);
+  // Ombre portée forte
+  ctx.shadowColor = 'rgba(0, 0, 0, 0.7)';
+  ctx.shadowBlur = 8;
+  ctx.shadowOffsetX = 4;
+  ctx.shadowOffsetY = 4;
+  ctx.fillText(modeName.toUpperCase(), 25, 58);
   ctx.restore();
 
   // === NOM DU JOUEUR ===
   ctx.save();
-  ctx.font = 'bold 58px Burbank, Arial Black, sans-serif';
+  ctx.font = 'bold 64px Burbank, Arial Black, sans-serif';
   ctx.fillStyle = '#ffffff';
-  ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
-  ctx.shadowBlur = 8;
-  ctx.shadowOffsetX = 3;
-  ctx.shadowOffsetY = 3;
-  ctx.fillText(playerName, 25, 115);
+  ctx.shadowColor = 'rgba(0, 0, 0, 0.6)';
+  ctx.shadowBlur = 10;
+  ctx.shadowOffsetX = 4;
+  ctx.shadowOffsetY = 4;
+  ctx.fillText(playerName, 25, 125);
   ctx.restore();
 
-  // === PÉRIODE (sous le nom) ===
+  // === PÉRIODE (sous le nom, style LEVEL) ===
   ctx.save();
-  ctx.font = 'bold 22px Burbank, Arial, sans-serif';
-  // Couleur cyan/vert pour la période
-  ctx.fillStyle = '#00ff88';
-  ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
-  ctx.shadowBlur = 3;
-  ctx.fillText(`${period.toUpperCase()}`, 25, 145);
+  ctx.font = 'bold 26px Burbank, Arial, sans-serif';
+  // Couleur cyan pour la période
+  ctx.fillStyle = '#00e5ff';
+  ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+  ctx.shadowBlur = 4;
+  ctx.fillText(period.toUpperCase(), 25, 158);
   ctx.restore();
 
   // === BARRES DE STATS ===
-  const barStartY = 170;
+  const barStartY = 180;
   const barHeight = 80;
   const barGap = 8;
   const barWidth = 520;
@@ -148,39 +169,32 @@ export async function renderStatsCard({ playerName, modeName, stats, period = 'L
       const cellX = barX + cellWidth * j + cellWidth / 2;
       const cellY = y + barHeight / 2;
 
-      // Icône (emoji style)
+      // Valeur (grande, blanche, bold)
       ctx.save();
-      ctx.font = '20px Arial';
-      ctx.textAlign = 'center';
-      ctx.fillText(statInfo.icon || '', cellX - 50, cellY - 8);
-      ctx.restore();
-
-      // Valeur (grande, blanche)
-      ctx.save();
-      ctx.font = 'bold 36px Burbank, Arial Black, sans-serif';
+      ctx.font = 'bold 40px Burbank, Arial Black, sans-serif';
       ctx.fillStyle = '#ffffff';
       ctx.textAlign = 'center';
-      ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
-      ctx.shadowBlur = 2;
-      ctx.fillText(statInfo.value, cellX, cellY - 2);
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
+      ctx.shadowBlur = 3;
+      ctx.fillText(statInfo.value, cellX, cellY);
       ctx.restore();
 
       // Label (petit, sous la valeur)
       ctx.save();
-      ctx.font = 'bold 13px Burbank, Arial, sans-serif';
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
+      ctx.font = 'bold 14px Burbank, Arial, sans-serif';
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
       ctx.textAlign = 'center';
-      ctx.fillText(statInfo.label, cellX, cellY + 25);
+      ctx.fillText(statInfo.label, cellX, cellY + 28);
       ctx.restore();
     }
   }
 
   // === FOOTER ===
   ctx.save();
-  ctx.font = 'bold 14px Burbank, Arial, sans-serif';
-  ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+  ctx.font = 'bold 16px Burbank, Arial, sans-serif';
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
   ctx.textAlign = 'right';
-  ctx.fillText('BOT-STATS-FORTNITE', CARD_WIDTH - 20, CARD_HEIGHT - 12);
+  ctx.fillText('BOT-STATS-FORTNITE', CARD_WIDTH - 20, CARD_HEIGHT - 15);
   ctx.restore();
 
   return canvas.toBuffer('image/png');
@@ -202,14 +216,14 @@ function prepareStatsData(stats) {
   const avgMatchTime = matches > 0 ? Math.floor(minutesPlayed / matches) : 0;
 
   return {
-    wins: { value: wins.toLocaleString(), label: 'WINS', icon: '🏆' },
-    winRate: { value: `${winRate}%`, label: 'WIN RATE', icon: '' },
-    matches: { value: matches.toLocaleString(), label: 'MATCHES', icon: '' },
-    kd: { value: kd, label: 'K/D', icon: '🎯' },
-    killsPerMatch: { value: killsPerMatch, label: 'KILLS/MATCH', icon: '' },
-    kills: { value: kills.toLocaleString(), label: 'KILLS', icon: '' },
-    playtime: { value: formatPlaytimeShort(minutesPlayed), label: 'PLAY TIME', icon: '⏱️' },
-    avgMatchTime: { value: `${avgMatchTime}M`, label: 'AVG. MATCH', icon: '' },
+    wins: { value: wins.toLocaleString(), label: 'WINS' },
+    winRate: { value: `${winRate}%`, label: 'WIN RATE' },
+    matches: { value: matches.toLocaleString(), label: 'MATCHES' },
+    kd: { value: kd, label: 'K/D' },
+    killsPerMatch: { value: killsPerMatch, label: 'KILLS/MATCH' },
+    kills: { value: kills.toLocaleString(), label: 'KILLS' },
+    playtime: { value: formatPlaytimeShort(minutesPlayed), label: 'PLAY TIME' },
+    avgMatchTime: { value: `${avgMatchTime}M`, label: 'AVG. MATCH' },
   };
 }
 
