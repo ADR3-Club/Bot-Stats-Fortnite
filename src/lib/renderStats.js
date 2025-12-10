@@ -213,9 +213,9 @@ export async function renderStatsCard({ playerName, modeName, stats, period = 'L
   if (avatarUrl) {
     try {
       const avatar = await loadImage(avatarUrl);
-      const avatarSize = 80;
-      const avatarX = CARD_WIDTH - avatarSize - 25;
-      const avatarY = 25;
+      const avatarSize = 110;
+      const avatarX = CARD_WIDTH - avatarSize - 20;
+      const avatarY = 20;
 
       // Dessiner un cercle pour clipper l'avatar
       ctx.save();

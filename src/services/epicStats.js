@@ -144,20 +144,24 @@ export const GAME_MODES = {
 
 
 /**
- * Récupère le niveau Battle Royale d'un joueur
+ * Récupère le niveau Battle Royale d'un joueur via fortnite-api.com
  * @param {string} accountId - ID du compte Epic
  * @returns {Promise<number|null>} - Niveau ou null si erreur
  */
 export async function getPlayerLevel(accountId) {
-  if (!isEpicReady()) {
-    return null;
-  }
-
-  const client = getEpicClient();
-
   try {
-    const level = await client.getBRAccountLevel(accountId);
-    return level || null;
+    const response = await fetch(
+      `https://fortnite-api.com/v2/stats/br/v2/${accountId}`,
+      { headers: getFortniteApiHeaders() }
+    );
+
+    if (!response.ok) return null;
+
+    const data = await response.json();
+    if (data.status === 200 && data.data?.battlePass?.level) {
+      return data.data.battlePass.level;
+    }
+    return null;
   } catch (e) {
     console.log(`[WARN] Impossible de récupérer le niveau: ${e.message}`);
     return null;
