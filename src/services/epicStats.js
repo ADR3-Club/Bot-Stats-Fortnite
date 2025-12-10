@@ -144,6 +144,27 @@ export const GAME_MODES = {
 
 
 /**
+ * Récupère le niveau Battle Royale d'un joueur
+ * @param {string} accountId - ID du compte Epic
+ * @returns {Promise<number|null>} - Niveau ou null si erreur
+ */
+export async function getPlayerLevel(accountId) {
+  if (!isEpicReady()) {
+    return null;
+  }
+
+  const client = getEpicClient();
+
+  try {
+    const level = await client.getBRAccountLevel(accountId);
+    return level || null;
+  } catch (e) {
+    console.log(`[WARN] Impossible de récupérer le niveau: ${e.message}`);
+    return null;
+  }
+}
+
+/**
  * Recherche un joueur par son pseudo Epic ou plateforme externe
  * Essaie dans l'ordre: Epic > PSN > Xbox (via fortnite-api.com)
  * @param {string} displayName - Pseudo Epic Games ou console

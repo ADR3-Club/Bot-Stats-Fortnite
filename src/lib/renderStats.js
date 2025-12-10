@@ -137,7 +137,7 @@ const CARD_HEIGHT = 620;
  * @param {string} options.avatarUrl - URL de l'avatar Discord
  * @returns {Promise<Buffer>} - Image PNG
  */
-export async function renderStatsCard({ playerName, modeName, stats, period = 'Lifetime', avatarUrl }) {
+export async function renderStatsCard({ playerName, modeName, stats, period = 'Lifetime', level, avatarUrl }) {
   const canvas = createCanvas(CARD_WIDTH, CARD_HEIGHT);
   const ctx = canvas.getContext('2d');
 
@@ -187,7 +187,7 @@ export async function renderStatsCard({ playerName, modeName, stats, period = 'L
     ctx.fill();
   }
 
-  // === NOM DU JOUEUR (le mode et LEVEL sont déjà sur le template) ===
+  // === NOM DU JOUEUR ===
   ctx.save();
   ctx.font = 'bold 72px Fortnite, Arial Black, sans-serif';
   ctx.fillStyle = '#ffffff';
@@ -197,6 +197,47 @@ export async function renderStatsCard({ playerName, modeName, stats, period = 'L
   ctx.shadowOffsetY = 3;
   ctx.fillText(playerName, 35, 135);
   ctx.restore();
+
+  // === NIVEAU DU JOUEUR (à côté de LEVEL) ===
+  if (level) {
+    ctx.save();
+    ctx.font = 'bold 36px Fortnite, Arial Black, sans-serif';
+    ctx.fillStyle = '#ffffff';
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+    ctx.shadowBlur = 4;
+    ctx.fillText(level.toString(), 130, 195);
+    ctx.restore();
+  }
+
+  // === AVATAR DISCORD (en haut à droite) ===
+  if (avatarUrl) {
+    try {
+      const avatar = await loadImage(avatarUrl);
+      const avatarSize = 80;
+      const avatarX = CARD_WIDTH - avatarSize - 25;
+      const avatarY = 25;
+
+      // Dessiner un cercle pour clipper l'avatar
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(avatarX + avatarSize / 2, avatarY + avatarSize / 2, avatarSize / 2, 0, Math.PI * 2);
+      ctx.closePath();
+      ctx.clip();
+      ctx.drawImage(avatar, avatarX, avatarY, avatarSize, avatarSize);
+      ctx.restore();
+
+      // Bordure blanche autour de l'avatar
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(avatarX + avatarSize / 2, avatarY + avatarSize / 2, avatarSize / 2, 0, Math.PI * 2);
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+      ctx.restore();
+    } catch (e) {
+      console.log(`[WARN] Impossible de charger l'avatar: ${e.message}`);
+    }
+  }
 
   // === STATS (superposées sur le template - pas de barres dessinées) ===
   // Le template contient déjà les barres colorées, on superpose juste le texte

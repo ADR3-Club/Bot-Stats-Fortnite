@@ -1,6 +1,6 @@
 // src/commands/stats.js
 import { SlashCommandBuilder, AttachmentBuilder } from 'discord.js';
-import { findPlayer, getPlayerStats, getAvailableModes, GAME_MODES, SEASONS } from '../services/epicStats.js';
+import { findPlayer, getPlayerStats, getPlayerLevel, getAvailableModes, GAME_MODES, SEASONS } from '../services/epicStats.js';
 import { getCachedStats, cacheStats, getLinkedAccount } from '../database/db.js';
 import { renderStatsCard } from '../lib/renderStats.js';
 
@@ -107,12 +107,16 @@ export async function execute(interaction) {
     // Période
     const period = seasonOnly ? SEASONS.current.shortName : 'Lifetime';
 
+    // Récupérer le niveau du joueur
+    const playerLevel = await getPlayerLevel(player.id);
+
     // Générer l'image avec l'avatar Discord de l'utilisateur
     const imageBuffer = await renderStatsCard({
       playerName: player.displayName,
       modeName: modeConfig.name,
       stats: modeStats,
       period,
+      level: playerLevel,
       avatarUrl: interaction.user.displayAvatarURL({ extension: 'png', size: 256 }),
     });
 
