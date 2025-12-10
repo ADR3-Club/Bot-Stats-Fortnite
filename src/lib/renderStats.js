@@ -41,10 +41,10 @@ const BACKGROUNDS_DIR = join(__dirname, '../assets/backgrounds');
 const BACKGROUND_FILES = {
   'Reload': 'Reload_cleanup.jpg',
   'Blitz': 'Blitz_cleanup.jpg',
-  'Zero Build': 'Frénésie_cleanup.jpg',
-  'Zero Build Solo': 'Frénésie_cleanup.jpg',
-  'Zero Build Duo': 'Frénésie_cleanup.jpg',
-  'Zero Build Squad': 'Frénésie_cleanup.jpg',
+  'Zero Build': 'Classic_cleaup.jpg',
+  'Zero Build Solo': 'Classic_cleaup.jpg',
+  'Zero Build Duo': 'Classic_cleaup.jpg',
+  'Zero Build Squad': 'Classic_cleaup.jpg',
 };
 
 /**
