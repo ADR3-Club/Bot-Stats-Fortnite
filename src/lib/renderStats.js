@@ -22,27 +22,36 @@ if (existsSync(fontPath)) {
   console.log(`[ERROR] Font Burbank non trouvée: ${fontPath}`);
 }
 
-// Cache pour les icônes SVG chargées
+// Cache pour les icônes chargées
 const iconCache = {};
 const ICONS_DIR = join(__dirname, '../assets/icons');
 
+// Mapping des noms d'icônes vers les fichiers PNG
+const ICON_FILES = {
+  crown: 'trophée.png',
+  crosshair: 'target.png',
+  timer: 'time.png',
+};
+
 /**
- * Charge une icône SVG et la met en cache
+ * Charge une icône PNG et la met en cache
  */
 async function loadIcon(name) {
   if (iconCache[name]) return iconCache[name];
 
-  const svgPath = join(ICONS_DIR, `${name}.svg`);
-  if (!existsSync(svgPath)) {
-    console.log(`[WARN] Icône ${name}.svg non trouvée`);
+  const fileName = ICON_FILES[name];
+  if (!fileName) {
+    return null;
+  }
+
+  const pngPath = join(ICONS_DIR, fileName);
+  if (!existsSync(pngPath)) {
+    console.log(`[WARN] Icône ${fileName} non trouvée`);
     return null;
   }
 
   try {
-    // Lire le SVG et le convertir en data URL pour loadImage
-    const svgContent = readFileSync(svgPath, 'utf-8');
-    const dataUrl = `data:image/svg+xml;base64,${Buffer.from(svgContent).toString('base64')}`;
-    const img = await loadImage(dataUrl);
+    const img = await loadImage(pngPath);
     iconCache[name] = img;
     return img;
   } catch (e) {
@@ -55,7 +64,7 @@ async function loadIcon(name) {
  * Précharge toutes les icônes au démarrage
  */
 export async function preloadIcons() {
-  const iconNames = ['crown', 'percent', 'play', 'swords', 'crosshair', 'skull', 'clock', 'timer'];
+  const iconNames = Object.keys(ICON_FILES);
   for (const name of iconNames) {
     await loadIcon(name);
   }
@@ -296,39 +305,18 @@ function prepareStatsData(stats) {
 }
 
 /**
- * Dessine une grande icône colorée (pour la barre de stats)
- * Utilise l'icône SVG si disponible, sinon fallback vectoriel
- * Rendu à haute résolution (3x) pour éviter le flou
+ * Dessine une grande icône (pour la barre de stats)
+ * Utilise l'icône PNG si disponible, sinon fallback vectoriel
  */
 function drawIconColored(ctx, type, x, y, size, color) {
   const icon = iconCache[type];
 
   if (icon) {
-    // Facteur de supersampling pour un rendu net
-    const scale = 3;
-    const hiResSize = size * scale;
-
-    // Créer un canvas temporaire haute résolution pour coloriser l'icône
-    const tempCanvas = createCanvas(hiResSize, hiResSize);
-    const tempCtx = tempCanvas.getContext('2d');
-
-    // Activer l'antialiasing
-    tempCtx.imageSmoothingEnabled = true;
-    tempCtx.imageSmoothingQuality = 'high';
-
-    // Dessiner l'icône SVG (blanche) à haute résolution
-    tempCtx.drawImage(icon, 0, 0, hiResSize, hiResSize);
-
-    // Appliquer la couleur via globalCompositeOperation
-    tempCtx.globalCompositeOperation = 'source-atop';
-    tempCtx.fillStyle = color;
-    tempCtx.fillRect(0, 0, hiResSize, hiResSize);
-
-    // Dessiner sur le canvas principal avec réduction (antialiasing activé)
+    // Dessiner l'icône PNG directement (déjà colorée)
     ctx.save();
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = 'high';
-    ctx.drawImage(tempCanvas, x - size / 2, y - size / 2, size, size);
+    ctx.drawImage(icon, x - size / 2, y - size / 2, size, size);
     ctx.restore();
     return;
   }
