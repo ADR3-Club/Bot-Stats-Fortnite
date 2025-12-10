@@ -124,12 +124,8 @@ export async function preloadIcons() {
 const CARD_WIDTH = 900;
 const CARD_HEIGHT = 620;
 
-// Couleurs des barres de stats (fortnite.gg exact)
-const STAT_BARS = [
-  { bg: '#346487', icon: 'crown', labelColor: '#7eb8e0', stats: ['wins', 'winRate', 'matches'] },       // Bleu foncé
-  { bg: '#803E91', icon: 'crosshair', labelColor: '#c090d0', stats: ['kd', 'killsPerMatch', 'kills'] }, // Violet
-  { bg: '#943156', icon: 'timer', labelColor: '#e090a0', stats: ['playtime', 'avgMatchTime'] },         // Bordeaux
-];
+// Note: Les barres de stats sont déjà dans les templates de fond
+// On superpose uniquement le texte des valeurs/labels
 
 /**
  * Génère une carte stats PNG pour un joueur
@@ -231,78 +227,52 @@ export async function renderStatsCard({ playerName, modeName, stats, period = 'L
   ctx.fillText(`LEVEL  ${period.toUpperCase()}`, 35, 180);
   ctx.restore();
 
-  // === BARRES DE STATS (positions fortnite.gg exactes) ===
-  const barStartY = 220;
-  const barHeight = 100;
-  const barGap = 12;
-  const barWidth = 500;
-  const barX = 80; // Décalé pour laisser place aux icônes à gauche
-  const iconSize = 60;
-
-  // Préparer les données de stats
+  // === STATS (superposées sur le template - pas de barres dessinées) ===
+  // Le template contient déjà les barres colorées, on superpose juste le texte
   const statsData = prepareStatsData(stats);
 
-  for (let i = 0; i < STAT_BARS.length; i++) {
-    const bar = STAT_BARS[i];
-    const y = barStartY + (barHeight + barGap) * i;
+  // Positions des stats sur le template (à ajuster selon le template)
+  // Barre 1 (bleue): Wins, Win Rate, Matches - Y ~270
+  // Barre 2 (violette): K/D, Kills/Match, Kills - Y ~382
+  // Barre 3 (bordeaux): Playtime, Avg Match - Y ~494
 
-    // Fond de la barre avec coins arrondis
-    ctx.save();
-    ctx.fillStyle = bar.bg;
-    roundRect(ctx, barX, y, barWidth, barHeight, 12);
-    ctx.fill();
-    ctx.restore();
+  const STAT_POSITIONS = [
+    { y: 270, stats: ['wins', 'winRate', 'matches'], labelColor: '#7eb8e0' },
+    { y: 382, stats: ['kd', 'killsPerMatch', 'kills'], labelColor: '#c090d0' },
+    { y: 494, stats: ['playtime', 'avgMatchTime'], labelColor: '#e090a0' },
+  ];
 
-    // Icône à gauche de la barre (style fortnite.gg)
-    if (bar.icon) {
-      const iconX = barX - 5; // Légèrement à gauche de la barre
-      const iconY = y + barHeight / 2;
-      drawIconColored(ctx, bar.icon, iconX, iconY, iconSize, bar.labelColor);
-    }
+  const barStartX = 150; // Début de la zone de stats (après l'icône du template)
+  const barWidth = 430;  // Largeur de la zone de stats
 
-    // Stats dans la barre (décalées pour laisser place à l'icône)
-    const statsStartX = barX + 70; // Après l'icône
-    const statsWidth = barWidth - 70;
+  for (const bar of STAT_POSITIONS) {
     const statCount = bar.stats.length;
-    const cellWidth = statsWidth / statCount;
+    const cellWidth = barWidth / statCount;
 
     for (let j = 0; j < statCount; j++) {
       const statKey = bar.stats[j];
       const statInfo = statsData[statKey];
       if (!statInfo) continue;
 
-      const cellX = statsStartX + cellWidth * j + cellWidth / 2;
-      const cellY = y + barHeight / 2;
+      const cellX = barStartX + cellWidth * j + cellWidth / 2;
+      const cellY = bar.y;
 
-      // Séparation verticale (sauf pour la première colonne)
-      if (j > 0) {
-        ctx.save();
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        const sepX = statsStartX + cellWidth * j;
-        ctx.moveTo(sepX, y + 18);
-        ctx.lineTo(sepX, y + barHeight - 18);
-        ctx.stroke();
-        ctx.restore();
-      }
-
-      // Valeur (GRANDE, blanche, bold - style fortnite.gg)
+      // Valeur (GRANDE, blanche, bold)
       ctx.save();
       ctx.font = 'bold 54px Fortnite, Arial Black, sans-serif';
       ctx.fillStyle = '#ffffff';
       ctx.textAlign = 'center';
-      ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
-      ctx.shadowBlur = 3;
-      ctx.fillText(statInfo.value, cellX, cellY + 8);
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+      ctx.shadowBlur = 4;
+      ctx.fillText(statInfo.value, cellX, cellY);
       ctx.restore();
 
-      // Label (coloré selon la barre - style fortnite.gg)
+      // Label (coloré selon la barre)
       ctx.save();
       ctx.font = 'bold 18px Fortnite, Arial, sans-serif';
       ctx.fillStyle = bar.labelColor;
       ctx.textAlign = 'center';
-      ctx.fillText(statInfo.label, cellX, cellY + 38);
+      ctx.fillText(statInfo.label, cellX, cellY + 30);
       ctx.restore();
     }
   }
