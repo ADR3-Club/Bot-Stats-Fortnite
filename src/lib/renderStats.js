@@ -210,10 +210,10 @@ export async function renderStatsCard({ playerName, modeName, stats, period = 'L
   const STAT_POSITIONS = [
     { y: 317, stats: ['wins', 'winRate', 'matches'], labelColor: '#7eb8e0' },
     { y: 430, stats: ['kd', 'killsPerMatch', 'kills'], labelColor: '#c090d0' },
-    { y: 553, stats: ['playtime', 'avgMatchTime'], labelColor: '#e090a0', startX: 100, width: 400 },
+    { y: 553, stats: ['playtime', 'avgMatchTime'], labelColor: '#e090a0', startX: 135, width: 400 },
   ];
 
-  const barStartX = 95; // Début de la zone de stats (décalé à gauche)
+  const barStartX = 130; // Début de la zone de stats
   const barWidth = 420;  // Largeur de la zone de stats
 
   for (const bar of STAT_POSITIONS) {
