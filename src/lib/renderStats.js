@@ -209,9 +209,9 @@ export async function renderStatsCard({ playerName, modeName, stats, period = 'L
 
   // Positions explicites basées sur les encadrés de référence (canvas 900x620)
   const STAT_POSITIONS = [
-    { y: 317, stats: ['wins', 'winRate', 'matches'], xPositions: [200, 340, 490], labelColor: '#7eb8e0' },
-    { y: 430, stats: ['kd', 'killsPerMatch', 'kills'], xPositions: [200, 340, 490], labelColor: '#c090d0' },
-    { y: 553, stats: ['playtime', 'avgMatchTime'], xPositions: [235, 450], labelColor: '#e090a0' },
+    { y: 317, stats: ['wins', 'winRate', 'matches'], xPositions: [175, 310, 455], labelColor: '#7eb8e0' },
+    { y: 430, stats: ['kd', 'killsPerMatch', 'kills'], xPositions: [175, 310, 455], labelColor: '#c090d0' },
+    { y: 553, stats: ['playtime', 'avgMatchTime'], xPositions: [210, 400], labelColor: '#e090a0' },
   ];
 
   for (const bar of STAT_POSITIONS) {
