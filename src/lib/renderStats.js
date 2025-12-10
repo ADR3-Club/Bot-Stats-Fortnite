@@ -75,11 +75,11 @@ export async function preloadIcons() {
 const CARD_WIDTH = 800;
 const CARD_HEIGHT = 450;
 
-// Couleurs des barres de stats (style fortnite.gg)
+// Couleurs des barres de stats (style fortnite.gg exact)
 const STAT_BARS = [
-  { bg: 'rgba(147, 81, 182, 0.95)', icon: 'crown', iconColor: '#e855a0', stats: ['wins', 'winRate', 'matches'] },      // Violet + icône rose
-  { bg: 'rgba(45, 135, 145, 0.95)', icon: 'crosshair', iconColor: '#55d4e8', stats: ['kd', 'killsPerMatch', 'kills'] }, // Teal + icône cyan
-  { bg: 'rgba(85, 55, 120, 0.95)', icon: 'timer', iconColor: '#c87090', stats: ['playtime', 'avgMatchTime'] },          // Violet foncé + icône rose foncé
+  { bg: '#1a3a5c', icon: 'crown', labelColor: '#e855a0', stats: ['wins', 'winRate', 'matches'] },      // Bleu foncé + labels rose
+  { bg: '#7b4b9e', icon: 'crosshair', labelColor: '#55e8e8', stats: ['kd', 'killsPerMatch', 'kills'] }, // Violet + labels cyan
+  { bg: '#6b3a5a', icon: 'timer', labelColor: '#e87090', stats: ['playtime', 'avgMatchTime'] },         // Bordeaux + labels rose
 ];
 
 /**
@@ -202,13 +202,13 @@ export async function renderStatsCard({ playerName, modeName, stats, period = 'L
   ctx.fillText(period.toUpperCase(), 25, 158);
   ctx.restore();
 
-  // === BARRES DE STATS ===
+  // === BARRES DE STATS (style fortnite.gg) ===
   const barStartY = 180;
-  const barHeight = 80;
-  const barGap = 8;
-  const barWidth = 540;
-  const barX = 20;
-  const iconAreaWidth = 70; // Espace pour l'icône à gauche
+  const barHeight = 85;
+  const barGap = 10;
+  const barWidth = 500;
+  const barX = 70; // Décalé pour laisser place aux icônes à gauche
+  const iconSize = 55;
 
   // Préparer les données de stats
   const statsData = prepareStatsData(stats);
@@ -224,44 +224,41 @@ export async function renderStatsCard({ playerName, modeName, stats, period = 'L
     ctx.fill();
     ctx.restore();
 
-    // Grande icône à gauche (style fortnite.gg)
+    // Icône À L'EXTÉRIEUR de la barre (à gauche, qui dépasse)
     if (bar.icon) {
-      const iconSize = 45;
-      const iconX = barX + iconAreaWidth / 2;
+      const iconX = barX - 5; // À gauche de la barre
       const iconY = y + barHeight / 2;
-      drawIconColored(ctx, bar.icon, iconX, iconY, iconSize, bar.iconColor);
+      drawIconColored(ctx, bar.icon, iconX, iconY, iconSize, bar.labelColor);
     }
 
-    // Stats dans la barre (décalées à droite pour laisser place à l'icône)
-    const statsAreaX = barX + iconAreaWidth;
-    const statsAreaWidth = barWidth - iconAreaWidth;
+    // Stats dans la barre
     const statCount = bar.stats.length;
-    const cellWidth = statsAreaWidth / statCount;
+    const cellWidth = barWidth / statCount;
 
     for (let j = 0; j < statCount; j++) {
       const statKey = bar.stats[j];
       const statInfo = statsData[statKey];
       if (!statInfo) continue;
 
-      const cellX = statsAreaX + cellWidth * j + cellWidth / 2;
+      const cellX = barX + cellWidth * j + cellWidth / 2;
       const cellY = y + barHeight / 2;
 
-      // Valeur (grande, blanche, bold)
+      // Valeur (GRANDE, blanche, bold)
       ctx.save();
-      ctx.font = 'bold 40px Burbank, Arial Black, sans-serif';
+      ctx.font = 'bold 48px Burbank, Arial Black, sans-serif';
       ctx.fillStyle = '#ffffff';
       ctx.textAlign = 'center';
-      ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
-      ctx.shadowBlur = 3;
-      ctx.fillText(statInfo.value, cellX, cellY);
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+      ctx.shadowBlur = 4;
+      ctx.fillText(statInfo.value, cellX, cellY + 5);
       ctx.restore();
 
-      // Label (petit, sous la valeur) - sans icône, juste le texte
+      // Label (coloré selon la barre)
       ctx.save();
-      ctx.font = 'bold 14px Burbank, Arial, sans-serif';
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+      ctx.font = 'bold 16px Burbank, Arial, sans-serif';
+      ctx.fillStyle = bar.labelColor;
       ctx.textAlign = 'center';
-      ctx.fillText(statInfo.label, cellX, cellY + 28);
+      ctx.fillText(statInfo.label, cellX, cellY + 32);
       ctx.restore();
     }
   }
