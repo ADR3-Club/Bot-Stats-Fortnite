@@ -187,26 +187,7 @@ export async function renderStatsCard({ playerName, modeName, stats, period = 'L
     ctx.fill();
   }
 
-  // === NOM DU MODE (Style fortnite.gg - Jaune/Orange italique) ===
-  ctx.save();
-  ctx.font = 'italic bold 58px Fortnite, Arial Black, sans-serif';
-
-  // Dégradé jaune/orange pour le mode
-  const modeGradient = ctx.createLinearGradient(35, 20, 400, 70);
-  modeGradient.addColorStop(0, '#ffd700');  // Or
-  modeGradient.addColorStop(0.5, '#ffb800');  // Orange doré
-  modeGradient.addColorStop(1, '#ff9500');  // Orange
-  ctx.fillStyle = modeGradient;
-
-  // Ombre portée forte
-  ctx.shadowColor = 'rgba(0, 0, 0, 0.7)';
-  ctx.shadowBlur = 8;
-  ctx.shadowOffsetX = 3;
-  ctx.shadowOffsetY = 3;
-  ctx.fillText(modeName.toUpperCase(), 35, 60);
-  ctx.restore();
-
-  // === NOM DU JOUEUR ===
+  // === NOM DU JOUEUR (le mode et LEVEL sont déjà sur le template) ===
   ctx.save();
   ctx.font = 'bold 72px Fortnite, Arial Black, sans-serif';
   ctx.fillStyle = '#ffffff';
@@ -215,16 +196,6 @@ export async function renderStatsCard({ playerName, modeName, stats, period = 'L
   ctx.shadowOffsetX = 3;
   ctx.shadowOffsetY = 3;
   ctx.fillText(playerName, 35, 135);
-  ctx.restore();
-
-  // === PÉRIODE (sous le nom, style LEVEL - fortnite.gg) ===
-  ctx.save();
-  ctx.font = 'bold 30px Fortnite, Arial, sans-serif';
-  // Couleur cyan pour la période (style LEVEL)
-  ctx.fillStyle = '#00e5ff';
-  ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
-  ctx.shadowBlur = 4;
-  ctx.fillText(`LEVEL  ${period.toUpperCase()}`, 35, 180);
   ctx.restore();
 
   // === STATS (superposées sur le template - pas de barres dessinées) ===
@@ -237,13 +208,13 @@ export async function renderStatsCard({ playerName, modeName, stats, period = 'L
   // Barre 3 (bordeaux): Playtime, Avg Match
 
   const STAT_POSITIONS = [
-    { y: 288, stats: ['wins', 'winRate', 'matches'], labelColor: '#7eb8e0' },
-    { y: 400, stats: ['kd', 'killsPerMatch', 'kills'], labelColor: '#c090d0' },
-    { y: 512, stats: ['playtime', 'avgMatchTime'], labelColor: '#e090a0' },
+    { y: 295, stats: ['wins', 'winRate', 'matches'], labelColor: '#7eb8e0' },
+    { y: 408, stats: ['kd', 'killsPerMatch', 'kills'], labelColor: '#c090d0' },
+    { y: 520, stats: ['playtime', 'avgMatchTime'], labelColor: '#e090a0' },
   ];
 
-  const barStartX = 115; // Début de la zone de stats (après l'icône du template)
-  const barWidth = 480;  // Largeur de la zone de stats
+  const barStartX = 170; // Début de la zone de stats (après l'icône du template)
+  const barWidth = 450;  // Largeur de la zone de stats
 
   for (const bar of STAT_POSITIONS) {
     const statCount = bar.stats.length;
