@@ -208,12 +208,12 @@ export async function renderStatsCard({ playerName, modeName, stats, period = 'L
   // Barre 3 (bordeaux): Playtime, Avg Match
 
   const STAT_POSITIONS = [
-    { y: 327, stats: ['wins', 'winRate', 'matches'], labelColor: '#7eb8e0' },
-    { y: 440, stats: ['kd', 'killsPerMatch', 'kills'], labelColor: '#c090d0' },
-    { y: 563, stats: ['playtime', 'avgMatchTime'], labelColor: '#e090a0', startX: 165, width: 400 },
+    { y: 307, stats: ['wins', 'winRate', 'matches'], labelColor: '#7eb8e0' },
+    { y: 420, stats: ['kd', 'killsPerMatch', 'kills'], labelColor: '#c090d0' },
+    { y: 543, stats: ['playtime', 'avgMatchTime'], labelColor: '#e090a0', startX: 115, width: 400 },
   ];
 
-  const barStartX = 160; // Début de la zone de stats (décalé à gauche)
+  const barStartX = 110; // Début de la zone de stats (décalé à gauche x2)
   const barWidth = 420;  // Largeur de la zone de stats
 
   for (const bar of STAT_POSITIONS) {
