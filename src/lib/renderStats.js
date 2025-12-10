@@ -210,22 +210,25 @@ export async function renderStatsCard({ playerName, modeName, stats, period = 'L
   const STAT_POSITIONS = [
     { y: 312, stats: ['wins', 'winRate', 'matches'], labelColor: '#7eb8e0' },
     { y: 425, stats: ['kd', 'killsPerMatch', 'kills'], labelColor: '#c090d0' },
-    { y: 548, stats: ['playtime', 'avgMatchTime'], labelColor: '#e090a0' },
+    { y: 548, stats: ['playtime', 'avgMatchTime'], labelColor: '#e090a0', startX: 190, width: 400 },
   ];
 
-  const barStartX = 160; // Début de la zone de stats (décalé à droite pour centrer)
-  const barWidth = 450;  // Largeur de la zone de stats
+  const barStartX = 185; // Début de la zone de stats (centré dans les barres)
+  const barWidth = 420;  // Largeur de la zone de stats
 
   for (const bar of STAT_POSITIONS) {
     const statCount = bar.stats.length;
-    const cellWidth = barWidth / statCount;
+    // Utiliser les valeurs personnalisées si définies, sinon les valeurs par défaut
+    const currentStartX = bar.startX || barStartX;
+    const currentWidth = bar.width || barWidth;
+    const cellWidth = currentWidth / statCount;
 
     for (let j = 0; j < statCount; j++) {
       const statKey = bar.stats[j];
       const statInfo = statsData[statKey];
       if (!statInfo) continue;
 
-      const cellX = barStartX + cellWidth * j + cellWidth / 2;
+      const cellX = currentStartX + cellWidth * j + cellWidth / 2;
       const cellY = bar.y;
 
       // Valeur (GRANDE, blanche, bold)
