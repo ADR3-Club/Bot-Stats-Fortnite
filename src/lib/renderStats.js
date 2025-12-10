@@ -209,9 +209,9 @@ export async function renderStatsCard({ playerName, modeName, stats, period = 'L
 
   // Positions explicites basées sur les encadrés de référence (canvas 900x620)
   const STAT_POSITIONS = [
-    { y: 317, stats: ['wins', 'winRate', 'matches'], xPositions: [175, 340, 500], labelColor: '#7eb8e0' },
-    { y: 430, stats: ['kd', 'killsPerMatch', 'kills'], xPositions: [175, 340, 500], labelColor: '#c090d0' },
-    { y: 553, stats: ['playtime', 'avgMatchTime'], xPositions: [210, 435], labelColor: '#e090a0' },
+    { y: 317, stats: ['wins', 'winRate', 'matches'], xPositions: [200, 355, 515], labelColor: '#7eb8e0' },
+    { y: 430, stats: ['kd', 'killsPerMatch', 'kills'], xPositions: [200, 355, 515], labelColor: '#c090d0' },
+    { y: 553, stats: ['playtime', 'avgMatchTime'], xPositions: [240, 455], labelColor: '#e090a0' },
   ];
 
   for (const bar of STAT_POSITIONS) {
@@ -279,7 +279,10 @@ function prepareStatsData(stats) {
   const kd = (kills / deaths).toFixed(2);
   const winRate = matches > 0 ? ((wins / matches) * 100).toFixed(1) : '0';
   const killsPerMatch = matches > 0 ? (kills / matches).toFixed(2) : '0';
-  const avgMatchTime = matches > 0 ? Math.floor(minutesPlayed / matches) : 0;
+  const avgMatchTimeRaw = matches > 0 ? minutesPlayed / matches : 0;
+  const avgMins = Math.floor(avgMatchTimeRaw);
+  const avgSecs = Math.round((avgMatchTimeRaw - avgMins) * 60);
+  const avgMatchTime = avgSecs > 0 ? `${avgMins}M ${avgSecs}S` : `${avgMins}M`;
 
   return {
     wins: { value: wins.toLocaleString(), label: 'WINS', iconType: 'crown' },
@@ -289,7 +292,7 @@ function prepareStatsData(stats) {
     killsPerMatch: { value: killsPerMatch, label: 'KILLS/MATCH', iconType: 'crosshair' },
     kills: { value: kills.toLocaleString(), label: 'KILLS', iconType: 'skull' },
     playtime: { value: formatPlaytimeShort(minutesPlayed), label: 'PLAY TIME', iconType: 'clock' },
-    avgMatchTime: { value: `${avgMatchTime}M`, label: 'AVG. MATCH', iconType: 'timer' },
+    avgMatchTime: { value: avgMatchTime, label: 'AVG. MATCH TIME', iconType: 'timer' },
   };
 }
 
