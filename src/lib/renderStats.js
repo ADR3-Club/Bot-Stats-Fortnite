@@ -121,8 +121,8 @@ export async function preloadIcons() {
 }
 
 // Dimensions de la carte (ratio fortnite.gg ~1.45:1)
-const CARD_WIDTH = 900;
-const CARD_HEIGHT = 620;
+const CARD_WIDTH = 1170;
+const CARD_HEIGHT = 807;
 
 // Note: Les barres de stats sont déjà dans les templates de fond
 // On superpose uniquement le texte des valeurs/labels
@@ -189,23 +189,23 @@ export async function renderStatsCard({ playerName, modeName, stats, period = 'L
 
   // === NOM DU JOUEUR ===
   ctx.save();
-  ctx.font = 'bold 72px Fortnite, Arial Black, sans-serif';
+  ctx.font = 'bold 94px Fortnite, Arial Black, sans-serif';
   ctx.fillStyle = '#ffffff';
   ctx.shadowColor = 'rgba(0, 0, 0, 0.6)';
-  ctx.shadowBlur = 10;
-  ctx.shadowOffsetX = 3;
-  ctx.shadowOffsetY = 3;
-  ctx.fillText(playerName, 35, 135);
+  ctx.shadowBlur = 13;
+  ctx.shadowOffsetX = 4;
+  ctx.shadowOffsetY = 4;
+  ctx.fillText(playerName, 46, 176);
   ctx.restore();
 
   // === NIVEAU DU JOUEUR (à côté de LEVEL) ===
   if (level) {
     ctx.save();
-    ctx.font = 'bold 36px Fortnite, Arial Black, sans-serif';
+    ctx.font = 'bold 47px Fortnite, Arial Black, sans-serif';
     ctx.fillStyle = '#ffffff';
     ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
-    ctx.shadowBlur = 4;
-    ctx.fillText(level.toString(), 168, 213);
+    ctx.shadowBlur = 5;
+    ctx.fillText(level.toString(), 218, 277);
     ctx.restore();
   }
 
@@ -213,9 +213,9 @@ export async function renderStatsCard({ playerName, modeName, stats, period = 'L
   if (avatarUrl) {
     try {
       const avatar = await loadImage(avatarUrl);
-      const avatarSize = 130;
-      const avatarX = CARD_WIDTH - avatarSize - 15;
-      const avatarY = 15;
+      const avatarSize = 169;
+      const avatarX = CARD_WIDTH - avatarSize - 20;
+      const avatarY = 20;
 
       // Dessiner un cercle pour clipper l'avatar
       ctx.save();
@@ -231,7 +231,7 @@ export async function renderStatsCard({ playerName, modeName, stats, period = 'L
       ctx.beginPath();
       ctx.arc(avatarX + avatarSize / 2, avatarY + avatarSize / 2, avatarSize / 2, 0, Math.PI * 2);
       ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = 3;
+      ctx.lineWidth = 4;
       ctx.stroke();
       ctx.restore();
     } catch (e) {
@@ -248,11 +248,11 @@ export async function renderStatsCard({ playerName, modeName, stats, period = 'L
   // Barre 2 (violette): K/D, Kills/Match, Kills
   // Barre 3 (bordeaux): Playtime, Avg Match
 
-  // Positions explicites basées sur les encadrés de référence (canvas 900x620)
+  // Positions explicites basées sur les encadrés de référence (canvas 1170x807)
   const STAT_POSITIONS = [
-    { y: 305, stats: ['wins', 'winRate', 'matches'], xPositions: [165, 355, 565], labelColor: '#7eb8e0' },
-    { y: 430, stats: ['kd', 'killsPerMatch', 'kills'], xPositions: [165, 355, 565], labelColor: '#c090d0' },
-    { y: 553, stats: ['playtime', 'avgMatchTime'], xPositions: [205, 495], labelColor: '#e090a0' },
+    { y: 397, stats: ['wins', 'winRate', 'matches'], xPositions: [215, 462, 735], labelColor: '#7eb8e0' },
+    { y: 559, stats: ['kd', 'killsPerMatch', 'kills'], xPositions: [215, 462, 735], labelColor: '#c090d0' },
+    { y: 719, stats: ['playtime', 'avgMatchTime'], xPositions: [267, 644], labelColor: '#e090a0' },
   ];
 
   for (const bar of STAT_POSITIONS) {
@@ -266,20 +266,20 @@ export async function renderStatsCard({ playerName, modeName, stats, period = 'L
 
       // Valeur (GRANDE, blanche, bold)
       ctx.save();
-      ctx.font = 'bold 54px Fortnite, Arial Black, sans-serif';
+      ctx.font = 'bold 70px Fortnite, Arial Black, sans-serif';
       ctx.fillStyle = '#ffffff';
       ctx.textAlign = 'center';
       ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
-      ctx.shadowBlur = 4;
+      ctx.shadowBlur = 5;
       ctx.fillText(statInfo.value, cellX, cellY);
       ctx.restore();
 
       // Label (coloré selon la barre)
       ctx.save();
-      ctx.font = 'bold 18px Fortnite, Arial, sans-serif';
+      ctx.font = 'bold 23px Fortnite, Arial, sans-serif';
       ctx.fillStyle = bar.labelColor;
       ctx.textAlign = 'center';
-      ctx.fillText(statInfo.label, cellX, cellY + 30);
+      ctx.fillText(statInfo.label, cellX, cellY + 39);
       ctx.restore();
     }
   }
