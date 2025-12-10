@@ -205,7 +205,7 @@ export async function renderStatsCard({ playerName, modeName, stats, period = 'L
     ctx.fillStyle = '#ffffff';
     ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
     ctx.shadowBlur = 4;
-    ctx.fillText(level.toString(), 130, 195);
+    ctx.fillText(level.toString(), 130, 210);
     ctx.restore();
   }
 
