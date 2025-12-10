@@ -284,26 +284,6 @@ export async function renderStatsCard({ playerName, modeName, stats, period = 'L
     }
   }
 
-  // === FOOTER (style fortnite.gg/stats) ===
-  ctx.save();
-  // Fond du badge
-  const footerText = 'BOT-STATS-FORTNITE';
-  ctx.font = 'bold 18px Fortnite, Arial, sans-serif';
-  const footerWidth = ctx.measureText(footerText).width + 20;
-  const footerX = CARD_WIDTH - footerWidth - 15;
-  const footerY = CARD_HEIGHT - 40;
-
-  // Badge avec fond semi-transparent
-  ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
-  roundRect(ctx, footerX, footerY, footerWidth, 28, 4);
-  ctx.fill();
-
-  // Texte du footer
-  ctx.fillStyle = '#ffffff';
-  ctx.textAlign = 'left';
-  ctx.fillText(footerText, footerX + 10, footerY + 20);
-  ctx.restore();
-
   return canvas.toBuffer('image/png');
 }
 
