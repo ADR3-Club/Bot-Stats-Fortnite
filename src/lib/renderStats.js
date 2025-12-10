@@ -33,6 +33,20 @@ const ICON_FILES = {
   timer: 'time.png',
 };
 
+// Cache pour les backgrounds
+const backgroundCache = {};
+const BACKGROUNDS_DIR = join(__dirname, '../assets/backgrounds');
+
+// Mapping des modes vers les fichiers de fond
+const BACKGROUND_FILES = {
+  'Reload': 'Reload_cleanup.jpg',
+  'Blitz': 'Blitz_cleanup.jpg',
+  'Zero Build': 'Frénésie_cleanup.jpg',
+  'Zero Build Solo': 'Frénésie_cleanup.jpg',
+  'Zero Build Duo': 'Frénésie_cleanup.jpg',
+  'Zero Build Squad': 'Frénésie_cleanup.jpg',
+};
+
 /**
  * Charge une icône PNG et la met en cache
  */
@@ -61,19 +75,53 @@ async function loadIcon(name) {
 }
 
 /**
- * Précharge toutes les icônes au démarrage
+ * Charge un background et le met en cache
+ */
+async function loadBackground(modeName) {
+  if (backgroundCache[modeName]) return backgroundCache[modeName];
+
+  const fileName = BACKGROUND_FILES[modeName];
+  if (!fileName) return null;
+
+  const bgPath = join(BACKGROUNDS_DIR, fileName);
+  if (!existsSync(bgPath)) {
+    console.log(`[WARN] Background ${fileName} non trouvé`);
+    return null;
+  }
+
+  try {
+    const img = await loadImage(bgPath);
+    backgroundCache[modeName] = img;
+    return img;
+  } catch (e) {
+    console.log(`[WARN] Erreur chargement background ${modeName}: ${e.message}`);
+    return null;
+  }
+}
+
+/**
+ * Précharge toutes les icônes et backgrounds au démarrage
  */
 export async function preloadIcons() {
+  // Icônes
   const iconNames = Object.keys(ICON_FILES);
   for (const name of iconNames) {
     await loadIcon(name);
   }
   console.log(`[INFO] ${Object.keys(iconCache).length} icônes chargées`);
+
+  // Backgrounds (uniquement les fichiers uniques)
+  const uniqueBackgrounds = [...new Set(Object.values(BACKGROUND_FILES))];
+  for (const fileName of uniqueBackgrounds) {
+    const modeName = Object.keys(BACKGROUND_FILES).find(k => BACKGROUND_FILES[k] === fileName);
+    if (modeName) await loadBackground(modeName);
+  }
+  console.log(`[INFO] ${Object.keys(backgroundCache).length} backgrounds chargés`);
 }
 
-// Dimensions de la carte
-const CARD_WIDTH = 800;
-const CARD_HEIGHT = 450;
+// Dimensions de la carte (ratio fortnite.gg ~1.45:1)
+const CARD_WIDTH = 900;
+const CARD_HEIGHT = 620;
 
 // Couleurs des barres de stats (fortnite.gg exact)
 const STAT_BARS = [
@@ -97,77 +145,51 @@ export async function renderStatsCard({ playerName, modeName, stats, period = 'L
   const ctx = canvas.getContext('2d');
 
   // === FOND ===
-  // Dégradé de fond (ciel bleu style Fortnite)
-  const bgGradient = ctx.createLinearGradient(0, 0, CARD_WIDTH, CARD_HEIGHT);
-  bgGradient.addColorStop(0, '#4da6ff');
-  bgGradient.addColorStop(0.4, '#6bb8ff');
-  bgGradient.addColorStop(0.7, '#87ceeb');
-  bgGradient.addColorStop(1, '#a8d8ea');
-  ctx.fillStyle = bgGradient;
-  ctx.fillRect(0, 0, CARD_WIDTH, CARD_HEIGHT);
+  // Essayer de charger le background du mode
+  const background = backgroundCache[modeName] || await loadBackground(modeName);
 
-  // Décoration géométrique (triangles/formes style Fortnite)
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
-  ctx.beginPath();
-  ctx.moveTo(CARD_WIDTH - 250, CARD_HEIGHT);
-  ctx.lineTo(CARD_WIDTH, CARD_HEIGHT - 200);
-  ctx.lineTo(CARD_WIDTH, CARD_HEIGHT);
-  ctx.closePath();
-  ctx.fill();
+  if (background) {
+    // Utiliser l'image de fond (cover: remplir tout le canvas)
+    const scale = Math.max(CARD_WIDTH / background.width, CARD_HEIGHT / background.height);
+    const scaledWidth = background.width * scale;
+    const scaledHeight = background.height * scale;
+    const offsetX = (CARD_WIDTH - scaledWidth) / 2;
+    const offsetY = (CARD_HEIGHT - scaledHeight) / 2;
+    ctx.drawImage(background, offsetX, offsetY, scaledWidth, scaledHeight);
+  } else {
+    // Fallback: dégradé de fond (ciel bleu style Fortnite)
+    const bgGradient = ctx.createLinearGradient(0, 0, CARD_WIDTH, CARD_HEIGHT);
+    bgGradient.addColorStop(0, '#4da6ff');
+    bgGradient.addColorStop(0.4, '#6bb8ff');
+    bgGradient.addColorStop(0.7, '#87ceeb');
+    bgGradient.addColorStop(1, '#a8d8ea');
+    ctx.fillStyle = bgGradient;
+    ctx.fillRect(0, 0, CARD_WIDTH, CARD_HEIGHT);
 
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
-  ctx.beginPath();
-  ctx.moveTo(CARD_WIDTH - 120, 0);
-  ctx.lineTo(CARD_WIDTH, 0);
-  ctx.lineTo(CARD_WIDTH, 100);
-  ctx.closePath();
-  ctx.fill();
+    // Décoration géométrique (triangles/formes style Fortnite)
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
+    ctx.beginPath();
+    ctx.moveTo(CARD_WIDTH - 250, CARD_HEIGHT);
+    ctx.lineTo(CARD_WIDTH, CARD_HEIGHT - 200);
+    ctx.lineTo(CARD_WIDTH, CARD_HEIGHT);
+    ctx.closePath();
+    ctx.fill();
 
-  // === AVATAR DISCORD (cercle en haut à droite) ===
-  const avatarSize = 140;
-  const avatarX = CARD_WIDTH - avatarSize - 25;
-  const avatarY = 20;
-
-  if (avatarUrl) {
-    try {
-      // Forcer le format PNG et une taille raisonnable
-      const cleanUrl = avatarUrl.split('?')[0] + '?size=256';
-      const avatar = await loadImage(cleanUrl);
-
-      // Cercle de fond (bordure blanche)
-      ctx.save();
-      ctx.beginPath();
-      ctx.arc(avatarX + avatarSize / 2, avatarY + avatarSize / 2, avatarSize / 2 + 5, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
-      ctx.fill();
-      ctx.restore();
-
-      // Masque circulaire pour l'avatar
-      ctx.save();
-      ctx.beginPath();
-      ctx.arc(avatarX + avatarSize / 2, avatarY + avatarSize / 2, avatarSize / 2, 0, Math.PI * 2);
-      ctx.closePath();
-      ctx.clip();
-      ctx.drawImage(avatar, avatarX, avatarY, avatarSize, avatarSize);
-      ctx.restore();
-    } catch (e) {
-      console.log(`[WARN] Avatar non chargé: ${e.message}`);
-      // Dessiner un cercle placeholder
-      ctx.save();
-      ctx.beginPath();
-      ctx.arc(avatarX + avatarSize / 2, avatarY + avatarSize / 2, avatarSize / 2, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
-      ctx.fill();
-      ctx.restore();
-    }
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+    ctx.beginPath();
+    ctx.moveTo(CARD_WIDTH - 120, 0);
+    ctx.lineTo(CARD_WIDTH, 0);
+    ctx.lineTo(CARD_WIDTH, 100);
+    ctx.closePath();
+    ctx.fill();
   }
 
   // === NOM DU MODE (Style fortnite.gg - Jaune/Orange italique) ===
   ctx.save();
-  ctx.font = 'italic bold 52px Fortnite, Arial Black, sans-serif';
+  ctx.font = 'italic bold 58px Fortnite, Arial Black, sans-serif';
 
   // Dégradé jaune/orange pour le mode
-  const modeGradient = ctx.createLinearGradient(25, 15, 350, 60);
+  const modeGradient = ctx.createLinearGradient(35, 20, 400, 70);
   modeGradient.addColorStop(0, '#ffd700');  // Or
   modeGradient.addColorStop(0.5, '#ffb800');  // Orange doré
   modeGradient.addColorStop(1, '#ff9500');  // Orange
@@ -176,39 +198,39 @@ export async function renderStatsCard({ playerName, modeName, stats, period = 'L
   // Ombre portée forte
   ctx.shadowColor = 'rgba(0, 0, 0, 0.7)';
   ctx.shadowBlur = 8;
-  ctx.shadowOffsetX = 4;
-  ctx.shadowOffsetY = 4;
-  ctx.fillText(modeName.toUpperCase(), 25, 58);
+  ctx.shadowOffsetX = 3;
+  ctx.shadowOffsetY = 3;
+  ctx.fillText(modeName.toUpperCase(), 35, 60);
   ctx.restore();
 
   // === NOM DU JOUEUR ===
   ctx.save();
-  ctx.font = 'bold 64px Fortnite, Arial Black, sans-serif';
+  ctx.font = 'bold 72px Fortnite, Arial Black, sans-serif';
   ctx.fillStyle = '#ffffff';
   ctx.shadowColor = 'rgba(0, 0, 0, 0.6)';
   ctx.shadowBlur = 10;
-  ctx.shadowOffsetX = 4;
-  ctx.shadowOffsetY = 4;
-  ctx.fillText(playerName, 25, 125);
+  ctx.shadowOffsetX = 3;
+  ctx.shadowOffsetY = 3;
+  ctx.fillText(playerName, 35, 135);
   ctx.restore();
 
-  // === PÉRIODE (sous le nom, style LEVEL) ===
+  // === PÉRIODE (sous le nom, style LEVEL - fortnite.gg) ===
   ctx.save();
-  ctx.font = 'bold 26px Fortnite, Arial, sans-serif';
-  // Couleur cyan pour la période
+  ctx.font = 'bold 30px Fortnite, Arial, sans-serif';
+  // Couleur cyan pour la période (style LEVEL)
   ctx.fillStyle = '#00e5ff';
   ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
   ctx.shadowBlur = 4;
-  ctx.fillText(period.toUpperCase(), 25, 158);
+  ctx.fillText(`LEVEL  ${period.toUpperCase()}`, 35, 180);
   ctx.restore();
 
-  // === BARRES DE STATS (style fortnite.gg) ===
-  const barStartY = 180;
-  const barHeight = 85;
-  const barGap = 10;
+  // === BARRES DE STATS (positions fortnite.gg exactes) ===
+  const barStartY = 220;
+  const barHeight = 100;
+  const barGap = 12;
   const barWidth = 500;
-  const barX = 70; // Décalé pour laisser place aux icônes à gauche
-  const iconSize = 55;
+  const barX = 80; // Décalé pour laisser place aux icônes à gauche
+  const iconSize = 60;
 
   // Préparer les données de stats
   const statsData = prepareStatsData(stats);
@@ -224,16 +246,16 @@ export async function renderStatsCard({ playerName, modeName, stats, period = 'L
     ctx.fill();
     ctx.restore();
 
-    // Icône À CHEVAL sur le bord gauche de la barre
+    // Icône à gauche de la barre (style fortnite.gg)
     if (bar.icon) {
-      const iconX = barX + 10; // Centré sur le bord gauche (à cheval)
+      const iconX = barX - 5; // Légèrement à gauche de la barre
       const iconY = y + barHeight / 2;
       drawIconColored(ctx, bar.icon, iconX, iconY, iconSize, bar.labelColor);
     }
 
     // Stats dans la barre (décalées pour laisser place à l'icône)
-    const statsStartX = barX + 60; // Après l'icône
-    const statsWidth = barWidth - 60;
+    const statsStartX = barX + 70; // Après l'icône
+    const statsWidth = barWidth - 70;
     const statCount = bar.stats.length;
     const cellWidth = statsWidth / statCount;
 
@@ -248,42 +270,54 @@ export async function renderStatsCard({ playerName, modeName, stats, period = 'L
       // Séparation verticale (sauf pour la première colonne)
       if (j > 0) {
         ctx.save();
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
         ctx.lineWidth = 2;
         ctx.beginPath();
         const sepX = statsStartX + cellWidth * j;
-        ctx.moveTo(sepX, y + 15);
-        ctx.lineTo(sepX, y + barHeight - 15);
+        ctx.moveTo(sepX, y + 18);
+        ctx.lineTo(sepX, y + barHeight - 18);
         ctx.stroke();
         ctx.restore();
       }
 
-      // Valeur (GRANDE, blanche, bold)
+      // Valeur (GRANDE, blanche, bold - style fortnite.gg)
       ctx.save();
-      ctx.font = 'bold 48px Fortnite, Arial Black, sans-serif';
+      ctx.font = 'bold 54px Fortnite, Arial Black, sans-serif';
       ctx.fillStyle = '#ffffff';
       ctx.textAlign = 'center';
-      ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
-      ctx.shadowBlur = 4;
-      ctx.fillText(statInfo.value, cellX, cellY + 5);
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
+      ctx.shadowBlur = 3;
+      ctx.fillText(statInfo.value, cellX, cellY + 8);
       ctx.restore();
 
-      // Label (coloré selon la barre)
+      // Label (coloré selon la barre - style fortnite.gg)
       ctx.save();
-      ctx.font = 'bold 16px Fortnite, Arial, sans-serif';
+      ctx.font = 'bold 18px Fortnite, Arial, sans-serif';
       ctx.fillStyle = bar.labelColor;
       ctx.textAlign = 'center';
-      ctx.fillText(statInfo.label, cellX, cellY + 32);
+      ctx.fillText(statInfo.label, cellX, cellY + 38);
       ctx.restore();
     }
   }
 
-  // === FOOTER ===
+  // === FOOTER (style fortnite.gg/stats) ===
   ctx.save();
-  ctx.font = 'bold 16px Fortnite, Arial, sans-serif';
-  ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-  ctx.textAlign = 'right';
-  ctx.fillText('BOT-STATS-FORTNITE', CARD_WIDTH - 20, CARD_HEIGHT - 15);
+  // Fond du badge
+  const footerText = 'BOT-STATS-FORTNITE';
+  ctx.font = 'bold 18px Fortnite, Arial, sans-serif';
+  const footerWidth = ctx.measureText(footerText).width + 20;
+  const footerX = CARD_WIDTH - footerWidth - 15;
+  const footerY = CARD_HEIGHT - 40;
+
+  // Badge avec fond semi-transparent
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+  roundRect(ctx, footerX, footerY, footerWidth, 28, 4);
+  ctx.fill();
+
+  // Texte du footer
+  ctx.fillStyle = '#ffffff';
+  ctx.textAlign = 'left';
+  ctx.fillText(footerText, footerX + 10, footerY + 20);
   ctx.restore();
 
   return canvas.toBuffer('image/png');
