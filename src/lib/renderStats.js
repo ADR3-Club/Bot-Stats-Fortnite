@@ -75,11 +75,11 @@ export async function preloadIcons() {
 const CARD_WIDTH = 800;
 const CARD_HEIGHT = 450;
 
-// Couleurs des barres de stats (même couleur que les icônes)
+// Couleurs des barres de stats (fortnite.gg exact)
 const STAT_BARS = [
-  { bg: '#4a90c2', icon: 'crown', labelColor: '#a0d4ff', stats: ['wins', 'winRate', 'matches'] },       // Bleu (comme trophée)
-  { bg: '#9b4bb0', icon: 'crosshair', labelColor: '#e0a0f0', stats: ['kd', 'killsPerMatch', 'kills'] }, // Violet/Magenta (comme target)
-  { bg: '#c04070', icon: 'timer', labelColor: '#ffa0c0', stats: ['playtime', 'avgMatchTime'] },         // Rose (comme time)
+  { bg: '#346487', icon: 'crown', labelColor: '#7eb8e0', stats: ['wins', 'winRate', 'matches'] },       // Bleu foncé
+  { bg: '#803E91', icon: 'crosshair', labelColor: '#c090d0', stats: ['kd', 'killsPerMatch', 'kills'] }, // Violet
+  { bg: '#943156', icon: 'timer', labelColor: '#e090a0', stats: ['playtime', 'avgMatchTime'] },         // Bordeaux
 ];
 
 /**
@@ -224,24 +224,39 @@ export async function renderStatsCard({ playerName, modeName, stats, period = 'L
     ctx.fill();
     ctx.restore();
 
-    // Icône À L'EXTÉRIEUR de la barre (à gauche, qui dépasse)
+    // Icône À CHEVAL sur le bord gauche de la barre
     if (bar.icon) {
-      const iconX = barX - 5; // À gauche de la barre
+      const iconX = barX + 10; // Centré sur le bord gauche (à cheval)
       const iconY = y + barHeight / 2;
       drawIconColored(ctx, bar.icon, iconX, iconY, iconSize, bar.labelColor);
     }
 
-    // Stats dans la barre
+    // Stats dans la barre (décalées pour laisser place à l'icône)
+    const statsStartX = barX + 60; // Après l'icône
+    const statsWidth = barWidth - 60;
     const statCount = bar.stats.length;
-    const cellWidth = barWidth / statCount;
+    const cellWidth = statsWidth / statCount;
 
     for (let j = 0; j < statCount; j++) {
       const statKey = bar.stats[j];
       const statInfo = statsData[statKey];
       if (!statInfo) continue;
 
-      const cellX = barX + cellWidth * j + cellWidth / 2;
+      const cellX = statsStartX + cellWidth * j + cellWidth / 2;
       const cellY = y + barHeight / 2;
+
+      // Séparation verticale (sauf pour la première colonne)
+      if (j > 0) {
+        ctx.save();
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        const sepX = statsStartX + cellWidth * j;
+        ctx.moveTo(sepX, y + 15);
+        ctx.lineTo(sepX, y + barHeight - 15);
+        ctx.stroke();
+        ctx.restore();
+      }
 
       // Valeur (GRANDE, blanche, bold)
       ctx.save();
