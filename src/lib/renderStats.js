@@ -231,19 +231,19 @@ export async function renderStatsCard({ playerName, modeName, stats, period = 'L
   // Le template contient déjà les barres colorées, on superpose juste le texte
   const statsData = prepareStatsData(stats);
 
-  // Positions des stats sur le template (à ajuster selon le template)
-  // Barre 1 (bleue): Wins, Win Rate, Matches - Y ~270
-  // Barre 2 (violette): K/D, Kills/Match, Kills - Y ~382
-  // Barre 3 (bordeaux): Playtime, Avg Match - Y ~494
+  // Positions des stats sur le template (ajustées pour correspondre aux barres)
+  // Barre 1 (bleue): Wins, Win Rate, Matches
+  // Barre 2 (violette): K/D, Kills/Match, Kills
+  // Barre 3 (bordeaux): Playtime, Avg Match
 
   const STAT_POSITIONS = [
-    { y: 270, stats: ['wins', 'winRate', 'matches'], labelColor: '#7eb8e0' },
-    { y: 382, stats: ['kd', 'killsPerMatch', 'kills'], labelColor: '#c090d0' },
-    { y: 494, stats: ['playtime', 'avgMatchTime'], labelColor: '#e090a0' },
+    { y: 288, stats: ['wins', 'winRate', 'matches'], labelColor: '#7eb8e0' },
+    { y: 400, stats: ['kd', 'killsPerMatch', 'kills'], labelColor: '#c090d0' },
+    { y: 512, stats: ['playtime', 'avgMatchTime'], labelColor: '#e090a0' },
   ];
 
-  const barStartX = 150; // Début de la zone de stats (après l'icône du template)
-  const barWidth = 430;  // Largeur de la zone de stats
+  const barStartX = 115; // Début de la zone de stats (après l'icône du template)
+  const barWidth = 480;  // Largeur de la zone de stats
 
   for (const bar of STAT_POSITIONS) {
     const statCount = bar.stats.length;
