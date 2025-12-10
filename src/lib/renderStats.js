@@ -110,13 +110,14 @@ export async function preloadIcons() {
   }
   console.log(`[INFO] ${Object.keys(iconCache).length} icônes chargées`);
 
-  // Backgrounds (uniquement les fichiers uniques)
-  const uniqueBackgrounds = [...new Set(Object.values(BACKGROUND_FILES))];
-  for (const fileName of uniqueBackgrounds) {
-    const modeName = Object.keys(BACKGROUND_FILES).find(k => BACKGROUND_FILES[k] === fileName);
-    if (modeName) await loadBackground(modeName);
+  // Backgrounds - charger TOUS les modes (pas juste les uniques)
+  for (const modeName of Object.keys(BACKGROUND_FILES)) {
+    const loaded = await loadBackground(modeName);
+    if (loaded) {
+      console.log(`[INFO] Background chargé: ${modeName} -> ${BACKGROUND_FILES[modeName]}`);
+    }
   }
-  console.log(`[INFO] ${Object.keys(backgroundCache).length} backgrounds chargés`);
+  console.log(`[INFO] ${Object.keys(backgroundCache).length} backgrounds en cache`);
 }
 
 // Dimensions de la carte (ratio fortnite.gg ~1.45:1)
@@ -146,7 +147,12 @@ export async function renderStatsCard({ playerName, modeName, stats, period = 'L
 
   // === FOND ===
   // Essayer de charger le background du mode
+  console.log(`[DEBUG] Rendu stats pour mode: "${modeName}"`);
+  console.log(`[DEBUG] Background attendu: ${BACKGROUND_FILES[modeName] || 'AUCUN'}`);
+  console.log(`[DEBUG] Cache contient: ${Object.keys(backgroundCache).join(', ')}`);
+
   const background = backgroundCache[modeName] || await loadBackground(modeName);
+  console.log(`[DEBUG] Background trouvé: ${background ? 'OUI' : 'NON'}`);
 
   if (background) {
     // Utiliser l'image de fond (cover: remplir tout le canvas)
