@@ -155,12 +155,13 @@ export async function renderStatsCard({ playerName, modeName, stats, period = 'L
   console.log(`[DEBUG] Background trouvé: ${background ? 'OUI' : 'NON'}`);
 
   if (background) {
-    // Utiliser l'image de fond (cover: remplir tout le canvas)
+    // Utiliser l'image de fond (cover: remplir tout le canvas, aligné en haut à gauche)
     const scale = Math.max(CARD_WIDTH / background.width, CARD_HEIGHT / background.height);
     const scaledWidth = background.width * scale;
     const scaledHeight = background.height * scale;
-    const offsetX = (CARD_WIDTH - scaledWidth) / 2;
-    const offsetY = (CARD_HEIGHT - scaledHeight) / 2;
+    // Aligner en haut à gauche (pas centré) pour préserver la zone du titre/mode
+    const offsetX = 0;
+    const offsetY = 0;
     ctx.drawImage(background, offsetX, offsetY, scaledWidth, scaledHeight);
   } else {
     // Fallback: dégradé de fond (ciel bleu style Fortnite)
