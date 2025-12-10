@@ -75,11 +75,11 @@ export async function preloadIcons() {
 const CARD_WIDTH = 800;
 const CARD_HEIGHT = 450;
 
-// Couleurs des barres de stats (style fortnite.gg exact)
+// Couleurs des barres de stats (même couleur que les icônes)
 const STAT_BARS = [
-  { bg: '#1a3a5c', icon: 'crown', labelColor: '#e855a0', stats: ['wins', 'winRate', 'matches'] },      // Bleu foncé + labels rose
-  { bg: '#7b4b9e', icon: 'crosshair', labelColor: '#55e8e8', stats: ['kd', 'killsPerMatch', 'kills'] }, // Violet + labels cyan
-  { bg: '#6b3a5a', icon: 'timer', labelColor: '#e87090', stats: ['playtime', 'avgMatchTime'] },         // Bordeaux + labels rose
+  { bg: '#4a90c2', icon: 'crown', labelColor: '#a0d4ff', stats: ['wins', 'winRate', 'matches'] },       // Bleu (comme trophée)
+  { bg: '#9b4bb0', icon: 'crosshair', labelColor: '#e0a0f0', stats: ['kd', 'killsPerMatch', 'kills'] }, // Violet/Magenta (comme target)
+  { bg: '#c04070', icon: 'timer', labelColor: '#ffa0c0', stats: ['playtime', 'avgMatchTime'] },         // Rose (comme time)
 ];
 
 /**
