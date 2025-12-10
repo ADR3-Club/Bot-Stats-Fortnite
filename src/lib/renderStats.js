@@ -207,28 +207,20 @@ export async function renderStatsCard({ playerName, modeName, stats, period = 'L
   // Barre 2 (violette): K/D, Kills/Match, Kills
   // Barre 3 (bordeaux): Playtime, Avg Match
 
+  // Positions explicites basées sur les encadrés de référence (canvas 900x620)
   const STAT_POSITIONS = [
-    { y: 317, stats: ['wins', 'winRate', 'matches'], labelColor: '#7eb8e0' },
-    { y: 430, stats: ['kd', 'killsPerMatch', 'kills'], labelColor: '#c090d0' },
-    { y: 553, stats: ['playtime', 'avgMatchTime'], labelColor: '#e090a0', startX: 135, width: 400 },
+    { y: 317, stats: ['wins', 'winRate', 'matches'], xPositions: [200, 340, 490], labelColor: '#7eb8e0' },
+    { y: 430, stats: ['kd', 'killsPerMatch', 'kills'], xPositions: [200, 340, 490], labelColor: '#c090d0' },
+    { y: 553, stats: ['playtime', 'avgMatchTime'], xPositions: [235, 450], labelColor: '#e090a0' },
   ];
 
-  const barStartX = 130; // Début de la zone de stats
-  const barWidth = 420;  // Largeur de la zone de stats
-
   for (const bar of STAT_POSITIONS) {
-    const statCount = bar.stats.length;
-    // Utiliser les valeurs personnalisées si définies, sinon les valeurs par défaut
-    const currentStartX = bar.startX || barStartX;
-    const currentWidth = bar.width || barWidth;
-    const cellWidth = currentWidth / statCount;
-
-    for (let j = 0; j < statCount; j++) {
+    for (let j = 0; j < bar.stats.length; j++) {
       const statKey = bar.stats[j];
       const statInfo = statsData[statKey];
       if (!statInfo) continue;
 
-      const cellX = currentStartX + cellWidth * j + cellWidth / 2;
+      const cellX = bar.xPositions[j];
       const cellY = bar.y;
 
       // Valeur (GRANDE, blanche, bold)
