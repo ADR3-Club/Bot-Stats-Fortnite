@@ -6,20 +6,20 @@ import { readFileSync, existsSync } from 'node:fs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-// Enregistrer la font Fortnite
-const fontPath = join(__dirname, '../assets/fonts/BurbankBigCondensed-Bold.otf');
+// Enregistrer la font Fortnite (Burbank Big Condensed Black)
+const fontPath = join(__dirname, '../assets/fonts/Burbank Big Condensed Black.otf');
 if (existsSync(fontPath)) {
   try {
     registerFont(fontPath, {
-      family: 'Burbank',
-      weight: 'bold',
+      family: 'Fortnite',
+      weight: 'normal',
     });
-    console.log('[INFO] Font Burbank enregistrée');
+    console.log('[INFO] Font Fortnite enregistrée');
   } catch (e) {
-    console.log(`[ERROR] Erreur enregistrement font Burbank: ${e.message}`);
+    console.log(`[ERROR] Erreur enregistrement font: ${e.message}`);
   }
 } else {
-  console.log(`[ERROR] Font Burbank non trouvée: ${fontPath}`);
+  console.log(`[ERROR] Font non trouvée: ${fontPath}`);
 }
 
 // Cache pour les icônes chargées
@@ -164,7 +164,7 @@ export async function renderStatsCard({ playerName, modeName, stats, period = 'L
 
   // === NOM DU MODE (Style fortnite.gg - Jaune/Orange italique) ===
   ctx.save();
-  ctx.font = 'italic bold 52px Burbank, Arial Black, sans-serif';
+  ctx.font = 'italic bold 52px Fortnite, Arial Black, sans-serif';
 
   // Dégradé jaune/orange pour le mode
   const modeGradient = ctx.createLinearGradient(25, 15, 350, 60);
@@ -183,7 +183,7 @@ export async function renderStatsCard({ playerName, modeName, stats, period = 'L
 
   // === NOM DU JOUEUR ===
   ctx.save();
-  ctx.font = 'bold 64px Burbank, Arial Black, sans-serif';
+  ctx.font = 'bold 64px Fortnite, Arial Black, sans-serif';
   ctx.fillStyle = '#ffffff';
   ctx.shadowColor = 'rgba(0, 0, 0, 0.6)';
   ctx.shadowBlur = 10;
@@ -194,7 +194,7 @@ export async function renderStatsCard({ playerName, modeName, stats, period = 'L
 
   // === PÉRIODE (sous le nom, style LEVEL) ===
   ctx.save();
-  ctx.font = 'bold 26px Burbank, Arial, sans-serif';
+  ctx.font = 'bold 26px Fortnite, Arial, sans-serif';
   // Couleur cyan pour la période
   ctx.fillStyle = '#00e5ff';
   ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
@@ -245,7 +245,7 @@ export async function renderStatsCard({ playerName, modeName, stats, period = 'L
 
       // Valeur (GRANDE, blanche, bold)
       ctx.save();
-      ctx.font = 'bold 48px Burbank, Arial Black, sans-serif';
+      ctx.font = 'bold 48px Fortnite, Arial Black, sans-serif';
       ctx.fillStyle = '#ffffff';
       ctx.textAlign = 'center';
       ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
@@ -255,7 +255,7 @@ export async function renderStatsCard({ playerName, modeName, stats, period = 'L
 
       // Label (coloré selon la barre)
       ctx.save();
-      ctx.font = 'bold 16px Burbank, Arial, sans-serif';
+      ctx.font = 'bold 16px Fortnite, Arial, sans-serif';
       ctx.fillStyle = bar.labelColor;
       ctx.textAlign = 'center';
       ctx.fillText(statInfo.label, cellX, cellY + 32);
@@ -265,7 +265,7 @@ export async function renderStatsCard({ playerName, modeName, stats, period = 'L
 
   // === FOOTER ===
   ctx.save();
-  ctx.font = 'bold 16px Burbank, Arial, sans-serif';
+  ctx.font = 'bold 16px Fortnite, Arial, sans-serif';
   ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
   ctx.textAlign = 'right';
   ctx.fillText('BOT-STATS-FORTNITE', CARD_WIDTH - 20, CARD_HEIGHT - 15);
